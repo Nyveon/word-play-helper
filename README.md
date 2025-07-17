@@ -13,7 +13,6 @@ Assistant and solver for the game ["Word Play"](https://store.steampowered.com/a
 ### Future Features
 
 -   Fix: prevent space or other non-tile symbols from being written.
--   Add automatic "last updated" timestamp for when word list was last updated.
 -   Allow for multi-letter tiles (`ing`, `qu`, etc.).
 -   Allow for wildcard tiles.
 -   Automatically remove tiles corresponding to selected word?
