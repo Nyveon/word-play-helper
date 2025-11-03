@@ -7,14 +7,43 @@ class WordPlayHelper {
         this.currentLetters = []; // Store current letters used
         this.extraSlots = 0; // Track number of extra slots
         this.letterScores = {
-            'A': 1, 'B': 3, 'C': 3, 'D': 2, 'E': 1, 'F': 4, 'G': 2, 'H': 4,
-            'I': 1, 'J': 8, 'K': 5, 'L': 1, 'M': 3, 'N': 1, 'O': 1, 'P': 3,
-            'Q': 10, 'R': 1, 'S': 1, 'T': 1, 'U': 1, 'V': 4, 'W': 4, 'X': 8,
-            'Y': 4, 'Z': 10
+            A: 1,
+            B: 3,
+            C: 3,
+            D: 2,
+            E: 1,
+            F: 4,
+            G: 2,
+            H: 4,
+            I: 1,
+            J: 8,
+            K: 5,
+            L: 1,
+            M: 3,
+            N: 1,
+            O: 1,
+            P: 3,
+            Q: 10,
+            R: 1,
+            S: 1,
+            T: 1,
+            U: 1,
+            V: 4,
+            W: 4,
+            X: 8,
+            Y: 4,
+            Z: 10,
         };
 
         // List of interactive elements to prevent focus hijacking
-        this.interactiveElements = ['INPUT', 'BUTTON', 'A', 'SELECT', 'LABEL', 'OPTION'];
+        this.interactiveElements = [
+            "INPUT",
+            "BUTTON",
+            "A",
+            "SELECT",
+            "LABEL",
+            "OPTION",
+        ];
 
         this.initializeTheme();
         this.initializeGrid();
@@ -24,17 +53,19 @@ class WordPlayHelper {
 
     initializeTheme() {
         // Check for saved theme preference or default to system preference
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
+        const savedTheme = localStorage.getItem("theme");
+        const systemPrefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches;
+
         if (savedTheme) {
             // Use saved preference
             this.setTheme(savedTheme);
         } else if (systemPrefersDark) {
             // Use system preference
-            this.setTheme('dark');
+            this.setTheme("dark");
         } else {
-            this.setTheme('light');
+            this.setTheme("light");
         }
 
         // Update UI to reflect current theme
@@ -43,33 +74,33 @@ class WordPlayHelper {
 
     setTheme(theme) {
         this.currentTheme = theme;
-        if (theme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
+        if (theme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
         } else {
-            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.setAttribute("data-theme", "light");
         }
     }
 
     toggleTheme() {
-        const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        const newTheme = this.currentTheme === "dark" ? "light" : "dark";
         this.setTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
+        localStorage.setItem("theme", newTheme);
         this.updateThemeUI();
     }
 
     updateThemeUI() {
-        const themeIcon = document.getElementById('themeIcon');
-        const themeLabel = document.getElementById('themeLabel');
-        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById("themeIcon");
+        const themeLabel = document.getElementById("themeLabel");
+        const themeToggle = document.getElementById("themeToggle");
 
-        if (this.currentTheme === 'dark') {
-            themeIcon.textContent = '☀️';
-            themeLabel.textContent = 'Light';
-            themeToggle.setAttribute('aria-label', 'Switch to light mode');
+        if (this.currentTheme === "dark") {
+            themeIcon.textContent = "☀️";
+            themeLabel.textContent = "Light";
+            themeToggle.setAttribute("aria-label", "Switch to light mode");
         } else {
-            themeIcon.textContent = '🌙';
-            themeLabel.textContent = 'Dark';
-            themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+            themeIcon.textContent = "🌙";
+            themeLabel.textContent = "Dark";
+            themeToggle.setAttribute("aria-label", "Switch to dark mode");
         }
     }
 
@@ -262,19 +293,21 @@ class WordPlayHelper {
     }
 
     isInteractiveElement(element) {
-        return this.interactiveElements.includes(element.tagName) ||
-            element.classList.contains('word') ||
-            element.hasAttribute('aria-controls');
+        return (
+            this.interactiveElements.includes(element.tagName) ||
+            element.classList.contains("word") ||
+            element.hasAttribute("aria-controls")
+        );
     }
 
     getFirstVisibleEmptyInput() {
-        const grid = document.querySelector('#letterGrid5x4');
+        const grid = document.querySelector("#letterGrid5x4");
         if (!grid) return null;
 
         const inputs = grid.querySelectorAll('input[type="text"]');
         for (const input of inputs) {
             const computedStyle = window.getComputedStyle(input);
-            if (computedStyle.visibility !== 'hidden' && input.value === '') {
+            if (computedStyle.visibility !== "hidden" && input.value === "") {
                 return input;
             }
         }
@@ -300,15 +333,14 @@ class WordPlayHelper {
 
     handleGlobalKeyDown(event) {
         // Handle Escape key to clear the grid
-        if (event.key === 'Escape') {
+        if (event.key === "Escape") {
             // Prevent clearing if user is typing in a filter input
-            if (event.target.classList.contains('filter-input')) {
+            if (event.target.classList.contains("filter-input")) {
                 return;
             }
             this.clearGrid();
         }
     }
-
 
     attachEventListeners() {
         // Theme toggle
@@ -360,8 +392,11 @@ class WordPlayHelper {
                 this.clearFilters();
             });
 
-        document.addEventListener('click', this.handlePageClick.bind(this));
-        document.addEventListener('keydown', this.handleGlobalKeyDown.bind(this));
+        document.addEventListener("click", this.handlePageClick.bind(this));
+        document.addEventListener(
+            "keydown",
+            this.handleGlobalKeyDown.bind(this)
+        );
     }
 
     async loadWordList() {
@@ -478,7 +513,7 @@ class WordPlayHelper {
 
         // Count available letters and wildcards separately
         for (const letter of availableLetters) {
-            if (letter === '*') {
+            if (letter === "*") {
                 wildcardCount++;
             } else {
                 letterCount[letter] = (letterCount[letter] || 0) + 1;
@@ -529,7 +564,6 @@ class WordPlayHelper {
         return totalPositionScore;
     }
 
-
     applyFilters() {
         if (this.currentResults.length === 0) return;
 
@@ -570,7 +604,6 @@ class WordPlayHelper {
         }
     }
 
-
     displayFilteredResults(words) {
         const wordList = document.getElementById("wordList");
 
@@ -587,10 +620,12 @@ class WordPlayHelper {
             return acc;
         }, {});
 
-        const lengths = Object.keys(wordsByLength).map(Number).sort((a, b) => b - a);
+        const lengths = Object.keys(wordsByLength)
+            .map(Number)
+            .sort((a, b) => b - a);
         let html = "";
 
-        lengths.forEach(length => {
+        lengths.forEach((length) => {
             const wordsForLength = wordsByLength[length];
             html += `
                 <div class="word-group">
@@ -600,7 +635,9 @@ class WordPlayHelper {
                         <span class="word-count">${wordsForLength.length}</span>
                     </h3>
                     <div class="words" data-words-for="${length}" id="words-${length}">
-                        ${wordsForLength.map(wordObj => this.createWordHtml(wordObj)).join("")}
+                        ${wordsForLength
+                            .map((wordObj) => this.createWordHtml(wordObj))
+                            .join("")}
                     </div>
                 </div>`;
         });
@@ -609,27 +646,37 @@ class WordPlayHelper {
         this.attachCollapseHandlers();
     }
 
-
     createWordHtml(wordObj) {
-        const { word, tileScore, positionScore, combinedScore, usedWildcardIndices, isHighScore } = wordObj;
-        let wordDisplay = '';
+        const {
+            word,
+            tileScore,
+            positionScore,
+            combinedScore,
+            usedWildcardIndices,
+            isHighScore,
+        } = wordObj;
+        let wordDisplay = "";
 
         if (usedWildcardIndices && usedWildcardIndices.length > 0) {
             wordDisplay += `<span class="wildcard-indicator">*</span>`;
-            wordDisplay += [...word].map((char, index) =>
-                usedWildcardIndices.includes(index) ? `<span class="wildcard-letter">${char}</span>` : char
-            ).join('');
+            wordDisplay += [...word]
+                .map((char, index) =>
+                    usedWildcardIndices.includes(index)
+                        ? `<span class="wildcard-letter">${char}</span>`
+                        : char
+                )
+                .join("");
         } else {
             wordDisplay = word;
         }
 
-        const classList = ['word'];
+        const classList = ["word"];
         if (isHighScore) {
-            classList.push('highlight-score');
+            classList.push("highlight-score");
         }
 
         return `
-            <div class="${classList.join(' ')}" alt="${combinedScore}">
+            <div class="${classList.join(" ")}" alt="${combinedScore}">
                 <span class="word-score-tile">${tileScore}</span>
                 <span class="word-text">${wordDisplay}</span>
                 <span class="word-score-position">${positionScore}</span>
@@ -684,7 +731,9 @@ class WordPlayHelper {
             return;
         }
         if (this.wordList.length === 0) {
-            this.showError("Word list is still loading. Please wait and try again.");
+            this.showError(
+                "Word list is still loading. Please wait and try again."
+            );
             return;
         }
 
@@ -693,19 +742,21 @@ class WordPlayHelper {
         setTimeout(() => {
             try {
                 const foundWords = [];
-                this.wordList.forEach(word => {
+                this.wordList.forEach((word) => {
                     if (word.length >= 4) {
                         const result = this.canFormWord(word, letters);
                         if (result) {
                             const tileScore = result.score;
-                            const positionScore = this.getPositionScore(word.length);
+                            const positionScore = this.getPositionScore(
+                                word.length
+                            );
                             const combinedScore = tileScore + positionScore;
                             foundWords.push({
                                 word,
                                 tileScore,
                                 positionScore,
                                 combinedScore,
-                                usedWildcardIndices: result.usedWildcardIndices
+                                usedWildcardIndices: result.usedWildcardIndices,
                             });
                         }
                     }
@@ -723,9 +774,16 @@ class WordPlayHelper {
                 // Add high score highlighting based on combined score
                 if (foundWords.length > 0) {
                     const maxLength = foundWords[0].word.length;
-                    const maxScoreAtMaxLength = Math.max(...foundWords.filter(w => w.word.length === maxLength).map(w => w.combinedScore));
-                    foundWords.forEach(w => {
-                        if (w.word.length < maxLength && w.combinedScore > maxScoreAtMaxLength) {
+                    const maxScoreAtMaxLength = Math.max(
+                        ...foundWords
+                            .filter((w) => w.word.length === maxLength)
+                            .map((w) => w.combinedScore)
+                    );
+                    foundWords.forEach((w) => {
+                        if (
+                            w.word.length < maxLength &&
+                            w.combinedScore > maxScoreAtMaxLength
+                        ) {
                             w.isHighScore = true;
                         }
                     });
