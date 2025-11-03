@@ -13,6 +13,9 @@ class WordPlayHelper {
             'Y': 4, 'Z': 10
         };
 
+        // List of interactive elements to prevent focus hijacking
+        this.interactiveElements = ['INPUT', 'BUTTON', 'A', 'SELECT', 'LABEL', 'OPTION'];
+
         this.initializeGrid();
         this.attachEventListeners();
         this.loadWordList();
@@ -163,22 +166,29 @@ class WordPlayHelper {
                     newIndex = index + 1;
                 }
                 break;
+            case "Delete":
+                e.preventDefault();
+                e.target.value = "";
+                return;
             case "Backspace":
-                if (!e.target.value && index > 0) {
-                    // Find the previous visible input
+                e.preventDefault(); // Prevent default browser action
+                e.target.value = ""; // Clear the current input's value
+
+                if (index > 0) {
+                    // Find the previous visible input to focus
                     let prevIndex = index - 1;
                     while (prevIndex >= 0) {
                         const prevInput = document.querySelector(
                             `[data-index="${prevIndex}"]`
                         );
                         if (prevInput && prevInput.style.display !== "none") {
-                            newIndex = prevIndex;
-                            break;
+                            prevInput.focus();
+                            break; // Exit loop once focus is moved
                         }
                         prevIndex--;
                     }
                 }
-                break;
+                return;
             case "Enter":
                 e.preventDefault();
                 this.findWords();
@@ -198,6 +208,55 @@ class WordPlayHelper {
             }
         }
     }
+
+    isInteractiveElement(element) {
+        return this.interactiveElements.includes(element.tagName) ||
+            element.classList.contains('word') ||
+            element.hasAttribute('aria-controls');
+    }
+
+    getFirstVisibleEmptyInput() {
+        const grid = document.querySelector('#letterGrid5x4');
+        if (!grid) return null;
+
+        const inputs = grid.querySelectorAll('input[type="text"]');
+        for (const input of inputs) {
+            const computedStyle = window.getComputedStyle(input);
+            if (computedStyle.visibility !== 'hidden' && input.value === '') {
+                return input;
+            }
+        }
+        return null;
+    }
+
+    handlePageClick(event) {
+        // Check if clicked element or any parent is interactive
+        let element = event.target;
+        while (element) {
+            if (this.isInteractiveElement(element)) {
+                return; // Don't focus if interactive element was clicked
+            }
+            element = element.parentElement;
+        }
+
+        // Focus the first visible empty input
+        const firstInput = this.getFirstVisibleEmptyInput();
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }
+
+    handleGlobalKeyDown(event) {
+        // Handle Escape key to clear the grid
+        if (event.key === 'Escape') {
+            // Prevent clearing if user is typing in a filter input
+            if (event.target.classList.contains('filter-input')) {
+                return;
+            }
+            this.clearGrid();
+        }
+    }
+
 
     attachEventListeners() {
         document.getElementById("findWords").addEventListener("click", () => {
@@ -243,6 +302,9 @@ class WordPlayHelper {
             .addEventListener("click", () => {
                 this.clearFilters();
             });
+
+        document.addEventListener('click', this.handlePageClick.bind(this));
+        document.addEventListener('keydown', this.handleGlobalKeyDown.bind(this));
     }
 
     async loadWordList() {
