@@ -28,11 +28,79 @@
         0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+/* Dark mode colors */
+[data-theme="dark"] {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --secondary-color: #64748b;
+    --secondary-hover: #475569;
+    --background: #0f172a;
+    --surface: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --highlight: #422006;
+    --highlight-hover: #14532d;
+    --highlight-border: #713f12;
+    --highlight-hover-border: #166534;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5),
+        0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Auto dark mode based on system preference */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --primary-color: #3b82f6;
+        --primary-hover: #2563eb;
+        --secondary-color: #64748b;
+        --secondary-hover: #475569;
+        --background: #0f172a;
+        --surface: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border: #334155;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --highlight: #422006;
+        --highlight-hover: #14532d;
+        --highlight-border: #713f12;
+        --highlight-hover-border: #166534;
+        --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5),
+            0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+}
+
 body {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--background);
     color: var(--text-primary);
     line-height: 1.6;
+}
+
+/* Link styles */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+a:visited {
+    color: var(--primary-color);
+}
+
+a:active {
+    color: var(--primary-hover);
 }
 
 .container {
@@ -48,6 +116,7 @@ body {
 header {
     text-align: center;
     padding: 40px 0;
+    position: relative;
 }
 
 header h1 {
@@ -60,6 +129,41 @@ header h1 {
 header p {
     font-size: 1.1rem;
     color: var(--text-secondary);
+}
+
+/* Theme toggle */
+.theme-toggle {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.theme-toggle:hover {
+    background: var(--background);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.theme-toggle:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.theme-toggle-icon {
+    font-size: 1.2rem;
+    line-height: 1;
 }
 
 /* Main content */
@@ -660,6 +764,11 @@ footer {
         font-size: 2rem;
     }
 
+    .theme-toggle {
+        position: static;
+        margin: 0 auto 16px auto;
+    }
+
     .game-section {
         grid-template-columns: 1fr;
         gap: 30px;
@@ -774,7 +883,7 @@ footer {
 
 .special-info-item-compact kbd {
     background: linear-gradient(to bottom, #ffffff, #f0f0f0);
-    color: var(--text-primary);
+    color: #1e293b;
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 11px;
@@ -789,6 +898,26 @@ footer {
     min-width: 24px;
     text-align: center;
     box-sizing: border-box;
+}
+
+[data-theme="dark"] .special-info-item-compact kbd {
+    background: linear-gradient(to bottom, #475569, #334155);
+    color: #f1f5f9;
+    border: 1px solid #1e293b;
+    border-bottom-width: 2px;
+    border-bottom-color: #0f172a;
+    box-shadow: 0 2px 0 0 #1e293b, 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .special-info-item-compact kbd {
+        background: linear-gradient(to bottom, #475569, #334155);
+        color: #f1f5f9;
+        border: 1px solid #1e293b;
+        border-bottom-width: 2px;
+        border-bottom-color: #0f172a;
+        box-shadow: 0 2px 0 0 #1e293b, 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
 }
 
 .special-info-item-compact.coming-soon code {

@@ -16,9 +16,61 @@ class WordPlayHelper {
         // List of interactive elements to prevent focus hijacking
         this.interactiveElements = ['INPUT', 'BUTTON', 'A', 'SELECT', 'LABEL', 'OPTION'];
 
+        this.initializeTheme();
         this.initializeGrid();
         this.attachEventListeners();
         this.loadWordList();
+    }
+
+    initializeTheme() {
+        // Check for saved theme preference or default to system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme) {
+            // Use saved preference
+            this.setTheme(savedTheme);
+        } else if (systemPrefersDark) {
+            // Use system preference
+            this.setTheme('dark');
+        } else {
+            this.setTheme('light');
+        }
+
+        // Update UI to reflect current theme
+        this.updateThemeUI();
+    }
+
+    setTheme(theme) {
+        this.currentTheme = theme;
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    }
+
+    toggleTheme() {
+        const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        this.setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateThemeUI();
+    }
+
+    updateThemeUI() {
+        const themeIcon = document.getElementById('themeIcon');
+        const themeLabel = document.getElementById('themeLabel');
+        const themeToggle = document.getElementById('themeToggle');
+
+        if (this.currentTheme === 'dark') {
+            themeIcon.textContent = '☀️';
+            themeLabel.textContent = 'Light';
+            themeToggle.setAttribute('aria-label', 'Switch to light mode');
+        } else {
+            themeIcon.textContent = '🌙';
+            themeLabel.textContent = 'Dark';
+            themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+        }
     }
 
     initializeGrid() {
@@ -259,6 +311,11 @@ class WordPlayHelper {
 
 
     attachEventListeners() {
+        // Theme toggle
+        document.getElementById("themeToggle").addEventListener("click", () => {
+            this.toggleTheme();
+        });
+
         document.getElementById("findWords").addEventListener("click", () => {
             this.findWords();
         });
