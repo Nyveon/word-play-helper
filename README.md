@@ -25,7 +25,8 @@ Changelog: [CHANGELOG.md](CHANGELOG.md)
 -   Optimizer/solver (instead of just assistant/helper).
     -   Part 1: including score per tile and bonus scores for length.
     -   Part 2: include calculation using perks and such.
--   Have an idea for a new feature? Open an issue!
+-   Inputting tiles from a screenshot of the game board.
+-   👀 Have an idea for a new feature? Open an issue!
 
 ## Development
 
@@ -71,4 +72,5 @@ This is still very much a prototype, and I'm not sure what direction to take it.
 
 -   [@Nyveon](https://github.com/Nyveon) - Maintainer
 -   [@tampueroc](https://github.com/tampueroc) - Timestamp updating & documentation
+-   [@nateify](https://github.com/nateify) - Base score calculation, wildcard underlines & new hotkeys.
 -   And all the steam users who have given feedback!
