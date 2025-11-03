@@ -46,6 +46,7 @@ class WordPlayHelper {
         ];
 
         this.initializeTheme();
+        this.initializeSettings();
         this.initializeGrid();
         this.attachEventListeners();
         this.loadWordList();
@@ -72,6 +73,73 @@ class WordPlayHelper {
         this.updateThemeUI();
     }
 
+    initializeSettings() {
+        // Load settings from localStorage with defaults (all disabled/false)
+        const defaultSettings = {
+            showTileScore: false,
+            showPositionScore: false,
+            showCombinedScore: false,
+        };
+
+        const savedSettings = localStorage.getItem("scoreSettings");
+        this.settings = savedSettings
+            ? JSON.parse(savedSettings)
+            : defaultSettings;
+
+        // Apply settings to UI
+        this.applySettings();
+        this.updateSettingsUI();
+    }
+
+    applySettings() {
+        // Remove all hide classes first
+        document.body.classList.remove(
+            "hide-tile-score",
+            "hide-position-score",
+            "hide-combined-score"
+        );
+
+        // Add hide classes based on settings
+        if (!this.settings.showTileScore) {
+            document.body.classList.add("hide-tile-score");
+        }
+        if (!this.settings.showPositionScore) {
+            document.body.classList.add("hide-position-score");
+        }
+        if (!this.settings.showCombinedScore) {
+            document.body.classList.add("hide-combined-score");
+        }
+    }
+
+    updateSettingsUI() {
+        // Update checkbox states to match current settings
+        document.getElementById("showTileScore").checked =
+            this.settings.showTileScore;
+        document.getElementById("showPositionScore").checked =
+            this.settings.showPositionScore;
+        document.getElementById("showCombinedScore").checked =
+            this.settings.showCombinedScore;
+    }
+
+    saveSettings() {
+        // Save current settings to localStorage
+        localStorage.setItem("scoreSettings", JSON.stringify(this.settings));
+        this.applySettings();
+    }
+
+    toggleSettingsPanel() {
+        const panel = document.getElementById("settingsPanel");
+        if (panel.style.display === "none") {
+            panel.style.display = "flex";
+        } else {
+            panel.style.display = "none";
+        }
+    }
+
+    closeSettingsPanel() {
+        document.getElementById("settingsPanel").style.display = "none";
+    }
+
     setTheme(theme) {
         this.currentTheme = theme;
         if (theme === "dark") {
@@ -81,26 +149,15 @@ class WordPlayHelper {
         }
     }
 
-    toggleTheme() {
-        const newTheme = this.currentTheme === "dark" ? "light" : "dark";
-        this.setTheme(newTheme);
-        localStorage.setItem("theme", newTheme);
-        this.updateThemeUI();
-    }
-
     updateThemeUI() {
-        const themeIcon = document.getElementById("themeIcon");
-        const themeLabel = document.getElementById("themeLabel");
-        const themeToggle = document.getElementById("themeToggle");
+        // Update radio button states to match current theme
+        const lightRadio = document.getElementById("themeLight");
+        const darkRadio = document.getElementById("themeDark");
 
         if (this.currentTheme === "dark") {
-            themeIcon.textContent = "☀️";
-            themeLabel.textContent = "Light";
-            themeToggle.setAttribute("aria-label", "Switch to light mode");
+            darkRadio.checked = true;
         } else {
-            themeIcon.textContent = "🌙";
-            themeLabel.textContent = "Dark";
-            themeToggle.setAttribute("aria-label", "Switch to dark mode");
+            lightRadio.checked = true;
         }
     }
 
@@ -343,10 +400,66 @@ class WordPlayHelper {
     }
 
     attachEventListeners() {
-        // Theme toggle
-        document.getElementById("themeToggle").addEventListener("click", () => {
-            this.toggleTheme();
+        // Settings panel toggle
+        document
+            .getElementById("settingsToggle")
+            .addEventListener("click", () => {
+                this.toggleSettingsPanel();
+            });
+
+        document
+            .getElementById("closeSettings")
+            .addEventListener("click", () => {
+                this.closeSettingsPanel();
+            });
+
+        // Close settings panel when clicking outside
+        document
+            .getElementById("settingsPanel")
+            .addEventListener("click", (e) => {
+                if (e.target.id === "settingsPanel") {
+                    this.closeSettingsPanel();
+                }
+            });
+
+        // Theme radio buttons
+        document
+            .getElementById("themeLight")
+            .addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    this.setTheme("light");
+                    localStorage.setItem("theme", "light");
+                }
+            });
+
+        document.getElementById("themeDark").addEventListener("change", (e) => {
+            if (e.target.checked) {
+                this.setTheme("dark");
+                localStorage.setItem("theme", "dark");
+            }
         });
+
+        // Settings checkboxes
+        document
+            .getElementById("showTileScore")
+            .addEventListener("change", (e) => {
+                this.settings.showTileScore = e.target.checked;
+                this.saveSettings();
+            });
+
+        document
+            .getElementById("showPositionScore")
+            .addEventListener("change", (e) => {
+                this.settings.showPositionScore = e.target.checked;
+                this.saveSettings();
+            });
+
+        document
+            .getElementById("showCombinedScore")
+            .addEventListener("change", (e) => {
+                this.settings.showCombinedScore = e.target.checked;
+                this.saveSettings();
+            });
 
         document.getElementById("findWords").addEventListener("click", () => {
             this.findWords();

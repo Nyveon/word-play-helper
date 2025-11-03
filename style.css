@@ -131,8 +131,8 @@ header p {
     color: var(--text-secondary);
 }
 
-/* Theme toggle */
-.theme-toggle {
+/* Settings toggle */
+.settings-toggle {
     position: absolute;
     top: 40px;
     right: 0;
@@ -149,21 +149,218 @@ header p {
     color: var(--text-primary);
 }
 
-.theme-toggle:hover {
+.settings-toggle:hover {
     background: var(--background);
     border-color: var(--primary-color);
     transform: translateY(-1px);
 }
 
-.theme-toggle:focus {
+.settings-toggle:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.theme-toggle-icon {
+.settings-toggle-icon {
     font-size: 1.2rem;
     line-height: 1;
+}
+
+/* Settings panel */
+.settings-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.settings-content {
+    background: var(--surface);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.close-settings {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.close-settings:hover {
+    background: var(--background);
+    color: var(--text-primary);
+}
+
+.close-settings:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.settings-body {
+    padding: 24px;
+}
+
+.settings-section {
+    margin-bottom: 24px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section h4 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.settings-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.settings-checkbox:hover {
+    background: var(--background);
+}
+
+.settings-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.settings-checkbox span {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+/* Radio buttons for theme selection */
+.settings-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+.settings-label {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.radio-options {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.settings-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+    border: 2px solid var(--border);
+    flex: 1;
+    justify-content: center;
+}
+
+.settings-radio:hover {
+    background: var(--background);
+    border-color: var(--primary-color);
+}
+
+.settings-radio input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.settings-radio input[type="radio"]:checked + span {
+    font-weight: 600;
+}
+
+.settings-radio:has(input[type="radio"]:checked) {
+    background: var(--background);
+    border-color: var(--primary-color);
+}
+
+.settings-radio span {
+    color: var(--text-primary);
+    font-size: 1rem;
 }
 
 /* Main content */
@@ -681,6 +878,24 @@ main {
     display: inline;
 }
 
+/* Settings-based visibility */
+body.hide-tile-score .word-score-tile {
+    display: none !important;
+}
+
+body.hide-position-score .word-score-position {
+    display: none !important;
+}
+
+body.hide-combined-score .word-score-combined {
+    display: none !important;
+}
+
+/* If position score is disabled, keep combined score visible on hover */
+body.hide-position-score .word:hover .word-score-combined {
+    display: inline !important;
+}
+
 .wildcard-letter {
     text-decoration: underline;
     text-decoration-thickness: 2px;
@@ -764,9 +979,19 @@ footer {
         font-size: 2rem;
     }
 
-    .theme-toggle {
+    .settings-toggle {
         position: static;
         margin: 0 auto 16px auto;
+    }
+
+    header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .radio-options {
+        flex-direction: column;
     }
 
     .game-section {
