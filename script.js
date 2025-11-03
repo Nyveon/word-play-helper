@@ -6,6 +6,12 @@ class WordPlayHelper {
         this.currentResults = []; // Store current unfiltered results
         this.currentLetters = []; // Store current letters used
         this.extraSlots = 0; // Track number of extra slots
+        this.letterScores = {
+            'A': 1, 'B': 3, 'C': 3, 'D': 2, 'E': 1, 'F': 4, 'G': 2, 'H': 4,
+            'I': 1, 'J': 8, 'K': 5, 'L': 1, 'M': 3, 'N': 1, 'O': 1, 'P': 3,
+            'Q': 10, 'R': 1, 'S': 1, 'T': 1, 'U': 1, 'V': 4, 'W': 4, 'X': 8,
+            'Y': 4, 'Z': 10
+        };
 
         this.initializeGrid();
         this.attachEventListeners();
@@ -360,27 +366,50 @@ class WordPlayHelper {
             }
         }
 
-        // Count required letters for the word
-        const wordLetters = {};
-        for (const letter of word) {
-            wordLetters[letter] = (wordLetters[letter] || 0) + 1;
-        }
+        let score = 0;
+        const usedWildcardIndices = [];
 
-        // Check if word can be formed with available letters and wildcards
-        let wildcardsNeeded = 0;
-        
-        for (const [letter, requiredCount] of Object.entries(wordLetters)) {
-            const availableCount = letterCount[letter] || 0;
-            
-            if (availableCount < requiredCount) {
-                // Need wildcards to make up the difference
-                wildcardsNeeded += (requiredCount - availableCount);
+        for (let i = 0; i < word.length; i++) {
+            const letter = word[i];
+            if (letterCount[letter] > 0) {
+                letterCount[letter]--;
+                score += this.letterScores[letter] || 0;
+            } else if (wildcardCount > 0) {
+                wildcardCount--;
+                usedWildcardIndices.push(i);
+                // Wildcards have a score of 0
+            } else {
+                return false;
             }
         }
-
-        // Check if we have enough wildcards to cover the shortage
-        return wildcardsNeeded <= wildcardCount;
+        return { score, usedWildcardIndices };
     }
+
+    getPositionScore(length) {
+        let totalPositionScore = 0;
+        // Loop through each position in the word (1-indexed)
+        for (let i = 1; i <= length; i++) {
+            if (i >= 20) {
+                totalPositionScore += 50;
+            } else if (i === 19) {
+                totalPositionScore += 40;
+            } else if (i === 18) {
+                totalPositionScore += 30;
+            } else if (i >= 15) {
+                totalPositionScore += 25;
+            } else if (i >= 12) {
+                totalPositionScore += 20;
+            } else if (i >= 10) {
+                totalPositionScore += 15;
+            } else if (i >= 8) {
+                totalPositionScore += 10;
+            } else if (i >= 5) {
+                totalPositionScore += 5;
+            }
+        }
+        return totalPositionScore;
+    }
+
 
     applyFilters() {
         if (this.currentResults.length === 0) return;
@@ -395,22 +424,18 @@ class WordPlayHelper {
             .getElementById("containsFilter")
             .value.toUpperCase();
 
-        let filteredWords = this.currentResults.filter((word) => {
-            let matches = true;
-
+        let filteredWords = this.currentResults.filter((wordObj) => {
+            let word = wordObj.word;
             if (startsWithFilter && !word.startsWith(startsWithFilter)) {
-                matches = false;
+                return false;
             }
-
             if (endsWithFilter && !word.endsWith(endsWithFilter)) {
-                matches = false;
+                return false;
             }
-
             if (containsFilter && !word.includes(containsFilter)) {
-                matches = false;
+                return false;
             }
-
-            return matches;
+            return true;
         });
 
         this.displayFilteredResults(filteredWords);
@@ -426,6 +451,7 @@ class WordPlayHelper {
         }
     }
 
+
     displayFilteredResults(words) {
         const wordList = document.getElementById("wordList");
 
@@ -435,44 +461,62 @@ class WordPlayHelper {
             return;
         }
 
-        // Group words by length
-        const wordsByLength = {};
-        words.forEach((word) => {
-            const length = word.length;
-            if (!wordsByLength[length]) {
-                wordsByLength[length] = [];
-            }
-            wordsByLength[length].push(word);
-        });
+        const wordsByLength = words.reduce((acc, wordObj) => {
+            const length = wordObj.word.length;
+            if (!acc[length]) acc[length] = [];
+            acc[length].push(wordObj);
+            return acc;
+        }, {});
 
-        // Display words grouped by length
+        const lengths = Object.keys(wordsByLength).map(Number).sort((a, b) => b - a);
         let html = "";
-        const lengths = Object.keys(wordsByLength)
-            .map(Number)
-            .sort((a, b) => b - a);
 
-        lengths.forEach((length) => {
+        lengths.forEach(length => {
             const wordsForLength = wordsByLength[length];
             html += `
                 <div class="word-group">
                     <h3 class="word-group-header" data-length="${length}" role="button" tabindex="0" aria-expanded="true" aria-controls="words-${length}">
                         <span class="collapse-icon">▼</span>
-                        ${length} letters 
+                        ${length} letters
                         <span class="word-count">${wordsForLength.length}</span>
                     </h3>
                     <div class="words" data-words-for="${length}" id="words-${length}">
-                        ${wordsForLength
-                            .map((word) => `<div class="word">${word}</div>`)
-                            .join("")}
+                        ${wordsForLength.map(wordObj => this.createWordHtml(wordObj)).join("")}
                     </div>
-                </div>
-            `;
+                </div>`;
         });
 
         wordList.innerHTML = html;
-
-        // Add click handlers for collapsible headers
         this.attachCollapseHandlers();
+    }
+
+
+    createWordHtml(wordObj) {
+        const { word, tileScore, positionScore, combinedScore, usedWildcardIndices, isHighScore } = wordObj;
+        let wordDisplay = '';
+
+        if (usedWildcardIndices && usedWildcardIndices.length > 0) {
+            wordDisplay += `<span class="wildcard-indicator">*</span>`;
+            wordDisplay += [...word].map((char, index) =>
+                usedWildcardIndices.includes(index) ? `<span class="wildcard-letter">${char}</span>` : char
+            ).join('');
+        } else {
+            wordDisplay = word;
+        }
+
+        const classList = ['word'];
+        if (isHighScore) {
+            classList.push('highlight-score');
+        }
+
+        return `
+            <div class="${classList.join(' ')}" alt="${combinedScore}">
+                <span class="word-score-tile">${tileScore}</span>
+                <span class="word-text">${wordDisplay}</span>
+                <span class="word-score-position">${positionScore}</span>
+                <span class="word-score-combined">${combinedScore}</span>
+            </div>
+        `;
     }
 
     attachCollapseHandlers() {
@@ -512,40 +556,61 @@ class WordPlayHelper {
             });
         });
     }
-
     async findWords() {
         if (this.isLoading) return;
 
         const letters = this.getGridLetters();
-
         if (letters.length === 0) {
             this.showError("Please enter some letters first.");
             return;
         }
-
         if (this.wordList.length === 0) {
-            this.showError(
-                "Word list is still loading. Please wait and try again."
-            );
+            this.showError("Word list is still loading. Please wait and try again.");
             return;
         }
 
         this.showLoading();
 
-        // Use setTimeout to prevent UI blocking
         setTimeout(() => {
             try {
-                const foundWords = this.wordList.filter((word) => {
-                    return word.length >= 4 && this.canFormWord(word, letters);
+                const foundWords = [];
+                this.wordList.forEach(word => {
+                    if (word.length >= 4) {
+                        const result = this.canFormWord(word, letters);
+                        if (result) {
+                            const tileScore = result.score;
+                            const positionScore = this.getPositionScore(word.length);
+                            const combinedScore = tileScore + positionScore;
+                            foundWords.push({
+                                word,
+                                tileScore,
+                                positionScore,
+                                combinedScore,
+                                usedWildcardIndices: result.usedWildcardIndices
+                            });
+                        }
+                    }
                 });
 
-                // Sort by length (descending) then alphabetically
+                // Sort by length (desc), combined score (desc), then alphabetically
                 foundWords.sort((a, b) => {
-                    if (a.length !== b.length) {
-                        return b.length - a.length;
-                    }
-                    return a.localeCompare(b);
+                    const lengthDiff = b.word.length - a.word.length;
+                    if (lengthDiff !== 0) return lengthDiff;
+                    const scoreDiff = b.combinedScore - a.combinedScore;
+                    if (scoreDiff !== 0) return scoreDiff;
+                    return a.word.localeCompare(b.word);
                 });
+
+                // Add high score highlighting based on combined score
+                if (foundWords.length > 0) {
+                    const maxLength = foundWords[0].word.length;
+                    const maxScoreAtMaxLength = Math.max(...foundWords.filter(w => w.word.length === maxLength).map(w => w.combinedScore));
+                    foundWords.forEach(w => {
+                        if (w.word.length < maxLength && w.combinedScore > maxScoreAtMaxLength) {
+                            w.isHighScore = true;
+                        }
+                    });
+                }
 
                 this.displayResults(foundWords, letters);
                 this.hideLoading();

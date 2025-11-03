@@ -18,6 +18,10 @@
     --success: #10b981;
     --warning: #f59e0b;
     --error: #ef4444;
+    --highlight: #fef3c7;
+    --highlight-hover: #085f42;
+    --highlight-border: #fde68a;
+    --highlight-hover-border: #a1d1c1;
     --border-radius: 8px;
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
@@ -434,11 +438,43 @@ main {
     transition: all 0.2s ease;
 }
 
+.word.highlight-score {
+    background-color: var(--highlight);
+    border-color: var(--highlight-border);
+}
+
+.word.highlight-score:hover {
+    background-color: var(--highlight-hover);
+    border-color: var(--highlight-hover-border);
+}
+
 .word:hover {
     background: var(--primary-color);
     color: white;
     transform: translateY(-1px);
     box-shadow: var(--shadow);
+}
+
+.word .word-score-combined {
+    display: inline
+}
+
+.word:hover .word-score-combined {
+    display: none
+}
+
+.word .word-score-position {
+    display: none
+}
+
+.word:hover .word-score-position {
+    display: inline
+}
+
+.wildcard-letter {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
 }
 
 .placeholder {
