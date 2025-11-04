@@ -6,10 +6,159 @@ class WordPlayHelper {
         this.currentResults = []; // Store current unfiltered results
         this.currentLetters = []; // Store current letters used
         this.extraSlots = 0; // Track number of extra slots
+        this.letterScores = {
+            A: 1,
+            B: 3,
+            C: 3,
+            D: 2,
+            E: 1,
+            F: 4,
+            G: 2,
+            H: 4,
+            I: 1,
+            J: 8,
+            K: 5,
+            L: 1,
+            M: 3,
+            N: 1,
+            O: 1,
+            P: 3,
+            Q: 10,
+            R: 1,
+            S: 1,
+            T: 1,
+            U: 1,
+            V: 4,
+            W: 4,
+            X: 8,
+            Y: 4,
+            Z: 10,
+        };
 
+        // List of interactive elements to prevent focus hijacking
+        this.interactiveElements = [
+            "INPUT",
+            "BUTTON",
+            "A",
+            "SELECT",
+            "LABEL",
+            "OPTION",
+        ];
+
+        this.initializeTheme();
+        this.initializeSettings();
         this.initializeGrid();
         this.attachEventListeners();
         this.loadWordList();
+    }
+
+    initializeTheme() {
+        // Check for saved theme preference or default to system preference
+        const savedTheme = localStorage.getItem("theme");
+        const systemPrefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches;
+
+        if (savedTheme) {
+            // Use saved preference
+            this.setTheme(savedTheme);
+        } else if (systemPrefersDark) {
+            // Use system preference
+            this.setTheme("dark");
+        } else {
+            this.setTheme("light");
+        }
+
+        // Update UI to reflect current theme
+        this.updateThemeUI();
+    }
+
+    initializeSettings() {
+        // Load settings from localStorage with defaults (all disabled/false)
+        const defaultSettings = {
+            showTileScore: false,
+            showPositionScore: false,
+            showCombinedScore: false,
+        };
+
+        const savedSettings = localStorage.getItem("scoreSettings");
+        this.settings = savedSettings
+            ? JSON.parse(savedSettings)
+            : defaultSettings;
+
+        // Apply settings to UI
+        this.applySettings();
+        this.updateSettingsUI();
+    }
+
+    applySettings() {
+        // Remove all hide classes first
+        document.body.classList.remove(
+            "hide-tile-score",
+            "hide-position-score",
+            "hide-combined-score"
+        );
+
+        // Add hide classes based on settings
+        if (!this.settings.showTileScore) {
+            document.body.classList.add("hide-tile-score");
+        }
+        if (!this.settings.showPositionScore) {
+            document.body.classList.add("hide-position-score");
+        }
+        if (!this.settings.showCombinedScore) {
+            document.body.classList.add("hide-combined-score");
+        }
+    }
+
+    updateSettingsUI() {
+        // Update checkbox states to match current settings
+        document.getElementById("showTileScore").checked =
+            this.settings.showTileScore;
+        document.getElementById("showPositionScore").checked =
+            this.settings.showPositionScore;
+        document.getElementById("showCombinedScore").checked =
+            this.settings.showCombinedScore;
+    }
+
+    saveSettings() {
+        // Save current settings to localStorage
+        localStorage.setItem("scoreSettings", JSON.stringify(this.settings));
+        this.applySettings();
+    }
+
+    toggleSettingsPanel() {
+        const panel = document.getElementById("settingsPanel");
+        if (panel.style.display === "none") {
+            panel.style.display = "flex";
+        } else {
+            panel.style.display = "none";
+        }
+    }
+
+    closeSettingsPanel() {
+        document.getElementById("settingsPanel").style.display = "none";
+    }
+
+    setTheme(theme) {
+        this.currentTheme = theme;
+        if (theme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+            document.documentElement.setAttribute("data-theme", "light");
+        }
+    }
+
+    updateThemeUI() {
+        // Update radio button states to match current theme
+        const lightRadio = document.getElementById("themeLight");
+        const darkRadio = document.getElementById("themeDark");
+
+        if (this.currentTheme === "dark") {
+            darkRadio.checked = true;
+        } else {
+            lightRadio.checked = true;
+        }
     }
 
     initializeGrid() {
@@ -157,22 +306,29 @@ class WordPlayHelper {
                     newIndex = index + 1;
                 }
                 break;
+            case "Delete":
+                e.preventDefault();
+                e.target.value = "";
+                return;
             case "Backspace":
-                if (!e.target.value && index > 0) {
-                    // Find the previous visible input
+                e.preventDefault(); // Prevent default browser action
+                e.target.value = ""; // Clear the current input's value
+
+                if (index > 0) {
+                    // Find the previous visible input to focus
                     let prevIndex = index - 1;
                     while (prevIndex >= 0) {
                         const prevInput = document.querySelector(
                             `[data-index="${prevIndex}"]`
                         );
                         if (prevInput && prevInput.style.display !== "none") {
-                            newIndex = prevIndex;
-                            break;
+                            prevInput.focus();
+                            break; // Exit loop once focus is moved
                         }
                         prevIndex--;
                     }
                 }
-                break;
+                return;
             case "Enter":
                 e.preventDefault();
                 this.findWords();
@@ -193,7 +349,124 @@ class WordPlayHelper {
         }
     }
 
+    isInteractiveElement(element) {
+        return (
+            this.interactiveElements.includes(element.tagName) ||
+            element.classList.contains("word") ||
+            element.hasAttribute("aria-controls")
+        );
+    }
+
+    getFirstVisibleEmptyInput() {
+        const grid = document.querySelector("#letterGrid5x4");
+        if (!grid) return null;
+
+        const inputs = grid.querySelectorAll('input[type="text"]');
+        for (const input of inputs) {
+            const computedStyle = window.getComputedStyle(input);
+            if (computedStyle.visibility !== "hidden" && input.value === "") {
+                return input;
+            }
+        }
+        return null;
+    }
+
+    handlePageClick(event) {
+        // Allow text selection
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0 && !selection.isCollapsed) {
+            return;
+        }
+
+        // Check if clicked element or any parent is interactive
+        let element = event.target;
+        while (element) {
+            if (this.isInteractiveElement(element)) {
+                return; // Don't focus if interactive element was clicked
+            }
+            element = element.parentElement;
+        }
+
+        // Focus the first visible empty input
+        const firstInput = this.getFirstVisibleEmptyInput();
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }
+
+    handleGlobalKeyDown(event) {
+        // Handle Escape key to clear the grid
+        if (event.key === "Escape") {
+            // Prevent clearing if user is typing in a filter input
+            if (event.target.classList.contains("filter-input")) {
+                return;
+            }
+            this.clearGrid();
+        }
+    }
+
     attachEventListeners() {
+        // Settings panel toggle
+        document
+            .getElementById("settingsToggle")
+            .addEventListener("click", () => {
+                this.toggleSettingsPanel();
+            });
+
+        document
+            .getElementById("closeSettings")
+            .addEventListener("click", () => {
+                this.closeSettingsPanel();
+            });
+
+        // Close settings panel when clicking outside
+        document
+            .getElementById("settingsPanel")
+            .addEventListener("click", (e) => {
+                if (e.target.id === "settingsPanel") {
+                    this.closeSettingsPanel();
+                }
+            });
+
+        // Theme radio buttons
+        document
+            .getElementById("themeLight")
+            .addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    this.setTheme("light");
+                    localStorage.setItem("theme", "light");
+                }
+            });
+
+        document.getElementById("themeDark").addEventListener("change", (e) => {
+            if (e.target.checked) {
+                this.setTheme("dark");
+                localStorage.setItem("theme", "dark");
+            }
+        });
+
+        // Settings checkboxes
+        document
+            .getElementById("showTileScore")
+            .addEventListener("change", (e) => {
+                this.settings.showTileScore = e.target.checked;
+                this.saveSettings();
+            });
+
+        document
+            .getElementById("showPositionScore")
+            .addEventListener("change", (e) => {
+                this.settings.showPositionScore = e.target.checked;
+                this.saveSettings();
+            });
+
+        document
+            .getElementById("showCombinedScore")
+            .addEventListener("change", (e) => {
+                this.settings.showCombinedScore = e.target.checked;
+                this.saveSettings();
+            });
+
         document.getElementById("findWords").addEventListener("click", () => {
             this.findWords();
         });
@@ -237,6 +510,12 @@ class WordPlayHelper {
             .addEventListener("click", () => {
                 this.clearFilters();
             });
+
+        document.addEventListener("click", this.handlePageClick.bind(this));
+        document.addEventListener(
+            "keydown",
+            this.handleGlobalKeyDown.bind(this)
+        );
     }
 
     async loadWordList() {
@@ -353,33 +632,55 @@ class WordPlayHelper {
 
         // Count available letters and wildcards separately
         for (const letter of availableLetters) {
-            if (letter === '*') {
+            if (letter === "*") {
                 wildcardCount++;
             } else {
                 letterCount[letter] = (letterCount[letter] || 0) + 1;
             }
         }
 
-        // Count required letters for the word
-        const wordLetters = {};
-        for (const letter of word) {
-            wordLetters[letter] = (wordLetters[letter] || 0) + 1;
-        }
+        let score = 0;
+        const usedWildcardIndices = [];
 
-        // Check if word can be formed with available letters and wildcards
-        let wildcardsNeeded = 0;
-        
-        for (const [letter, requiredCount] of Object.entries(wordLetters)) {
-            const availableCount = letterCount[letter] || 0;
-            
-            if (availableCount < requiredCount) {
-                // Need wildcards to make up the difference
-                wildcardsNeeded += (requiredCount - availableCount);
+        for (let i = 0; i < word.length; i++) {
+            const letter = word[i];
+            if (letterCount[letter] > 0) {
+                letterCount[letter]--;
+                score += this.letterScores[letter] || 0;
+            } else if (wildcardCount > 0) {
+                wildcardCount--;
+                usedWildcardIndices.push(i);
+                // Wildcards have a score of 0
+            } else {
+                return false;
             }
         }
+        return { score, usedWildcardIndices };
+    }
 
-        // Check if we have enough wildcards to cover the shortage
-        return wildcardsNeeded <= wildcardCount;
+    getPositionScore(length) {
+        let totalPositionScore = 0;
+        // Loop through each position in the word (1-indexed)
+        for (let i = 1; i <= length; i++) {
+            if (i >= 20) {
+                totalPositionScore += 50;
+            } else if (i === 19) {
+                totalPositionScore += 40;
+            } else if (i === 18) {
+                totalPositionScore += 30;
+            } else if (i >= 15) {
+                totalPositionScore += 25;
+            } else if (i >= 12) {
+                totalPositionScore += 20;
+            } else if (i >= 10) {
+                totalPositionScore += 15;
+            } else if (i >= 8) {
+                totalPositionScore += 10;
+            } else if (i >= 5) {
+                totalPositionScore += 5;
+            }
+        }
+        return totalPositionScore;
     }
 
     applyFilters() {
@@ -395,22 +696,18 @@ class WordPlayHelper {
             .getElementById("containsFilter")
             .value.toUpperCase();
 
-        let filteredWords = this.currentResults.filter((word) => {
-            let matches = true;
-
+        let filteredWords = this.currentResults.filter((wordObj) => {
+            let word = wordObj.word;
             if (startsWithFilter && !word.startsWith(startsWithFilter)) {
-                matches = false;
+                return false;
             }
-
             if (endsWithFilter && !word.endsWith(endsWithFilter)) {
-                matches = false;
+                return false;
             }
-
             if (containsFilter && !word.includes(containsFilter)) {
-                matches = false;
+                return false;
             }
-
-            return matches;
+            return true;
         });
 
         this.displayFilteredResults(filteredWords);
@@ -435,21 +732,17 @@ class WordPlayHelper {
             return;
         }
 
-        // Group words by length
-        const wordsByLength = {};
-        words.forEach((word) => {
-            const length = word.length;
-            if (!wordsByLength[length]) {
-                wordsByLength[length] = [];
-            }
-            wordsByLength[length].push(word);
-        });
+        const wordsByLength = words.reduce((acc, wordObj) => {
+            const length = wordObj.word.length;
+            if (!acc[length]) acc[length] = [];
+            acc[length].push(wordObj);
+            return acc;
+        }, {});
 
-        // Display words grouped by length
-        let html = "";
         const lengths = Object.keys(wordsByLength)
             .map(Number)
             .sort((a, b) => b - a);
+        let html = "";
 
         lengths.forEach((length) => {
             const wordsForLength = wordsByLength[length];
@@ -457,22 +750,57 @@ class WordPlayHelper {
                 <div class="word-group">
                     <h3 class="word-group-header" data-length="${length}" role="button" tabindex="0" aria-expanded="true" aria-controls="words-${length}">
                         <span class="collapse-icon">▼</span>
-                        ${length} letters 
+                        ${length} letters
                         <span class="word-count">${wordsForLength.length}</span>
                     </h3>
                     <div class="words" data-words-for="${length}" id="words-${length}">
                         ${wordsForLength
-                            .map((word) => `<div class="word">${word}</div>`)
+                            .map((wordObj) => this.createWordHtml(wordObj))
                             .join("")}
                     </div>
-                </div>
-            `;
+                </div>`;
         });
 
         wordList.innerHTML = html;
-
-        // Add click handlers for collapsible headers
         this.attachCollapseHandlers();
+    }
+
+    createWordHtml(wordObj) {
+        const {
+            word,
+            tileScore,
+            positionScore,
+            combinedScore,
+            usedWildcardIndices,
+            isHighScore,
+        } = wordObj;
+        let wordDisplay = "";
+
+        if (usedWildcardIndices && usedWildcardIndices.length > 0) {
+            wordDisplay += [...word]
+                .map((char, index) =>
+                    usedWildcardIndices.includes(index)
+                        ? `<span class="wildcard-letter">${char}</span>`
+                        : char
+                )
+                .join("");
+        } else {
+            wordDisplay = word;
+        }
+
+        const classList = ["word"];
+        if (isHighScore) {
+            classList.push("highlight-score");
+        }
+
+        return `
+            <div class="${classList.join(" ")}" alt="${combinedScore}">
+                <span class="word-score-tile">${tileScore}</span>
+                <span class="word-text">${wordDisplay}</span>
+                <span class="word-score-position">${positionScore}</span>
+                <span class="word-score-combined">${combinedScore}</span>
+            </div>
+        `;
     }
 
     attachCollapseHandlers() {
@@ -512,17 +840,14 @@ class WordPlayHelper {
             });
         });
     }
-
     async findWords() {
         if (this.isLoading) return;
 
         const letters = this.getGridLetters();
-
         if (letters.length === 0) {
             this.showError("Please enter some letters first.");
             return;
         }
-
         if (this.wordList.length === 0) {
             this.showError(
                 "Word list is still loading. Please wait and try again."
@@ -532,20 +857,55 @@ class WordPlayHelper {
 
         this.showLoading();
 
-        // Use setTimeout to prevent UI blocking
         setTimeout(() => {
             try {
-                const foundWords = this.wordList.filter((word) => {
-                    return word.length >= 4 && this.canFormWord(word, letters);
+                const foundWords = [];
+                this.wordList.forEach((word) => {
+                    if (word.length >= 4) {
+                        const result = this.canFormWord(word, letters);
+                        if (result) {
+                            const tileScore = result.score;
+                            const positionScore = this.getPositionScore(
+                                word.length
+                            );
+                            const combinedScore = tileScore + positionScore;
+                            foundWords.push({
+                                word,
+                                tileScore,
+                                positionScore,
+                                combinedScore,
+                                usedWildcardIndices: result.usedWildcardIndices,
+                            });
+                        }
+                    }
                 });
 
-                // Sort by length (descending) then alphabetically
+                // Sort by length (desc), combined score (desc), then alphabetically
                 foundWords.sort((a, b) => {
-                    if (a.length !== b.length) {
-                        return b.length - a.length;
-                    }
-                    return a.localeCompare(b);
+                    const lengthDiff = b.word.length - a.word.length;
+                    if (lengthDiff !== 0) return lengthDiff;
+                    const scoreDiff = b.combinedScore - a.combinedScore;
+                    if (scoreDiff !== 0) return scoreDiff;
+                    return a.word.localeCompare(b.word);
                 });
+
+                // Add high score highlighting based on combined score
+                if (foundWords.length > 0) {
+                    const maxLength = foundWords[0].word.length;
+                    const maxScoreAtMaxLength = Math.max(
+                        ...foundWords
+                            .filter((w) => w.word.length === maxLength)
+                            .map((w) => w.combinedScore)
+                    );
+                    foundWords.forEach((w) => {
+                        if (
+                            w.word.length < maxLength &&
+                            w.combinedScore > maxScoreAtMaxLength
+                        ) {
+                            w.isHighScore = true;
+                        }
+                    });
+                }
 
                 this.displayResults(foundWords, letters);
                 this.hideLoading();

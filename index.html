@@ -9,12 +9,96 @@
     <body>
         <div class="container">
             <header>
+                <button
+                    id="settingsToggle"
+                    class="settings-toggle"
+                    aria-label="Open settings"
+                >
+                    <span class="settings-toggle-icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
                 <h1>Word Play Helper</h1>
                 <p>
                     Enter your letters in the 4×4 grid to find all possible
                     words for your round of Word Play.
                 </p>
             </header>
+
+            <!-- Settings Panel -->
+            <div
+                id="settingsPanel"
+                class="settings-panel"
+                style="display: none"
+            >
+                <div class="settings-content">
+                    <div class="settings-header">
+                        <h3>Settings</h3>
+                        <button
+                            id="closeSettings"
+                            class="close-settings"
+                            aria-label="Close settings"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <div class="settings-body">
+                        <div class="settings-section">
+                            <h4>Appearance</h4>
+                            <div class="settings-options">
+                                <label class="settings-radio-group">
+                                    <span class="settings-label">Theme:</span>
+                                    <div class="radio-options">
+                                        <label class="settings-radio">
+                                            <input
+                                                type="radio"
+                                                name="theme"
+                                                value="light"
+                                                id="themeLight"
+                                            />
+                                            <span>☀️ Light</span>
+                                        </label>
+                                        <label class="settings-radio">
+                                            <input
+                                                type="radio"
+                                                name="theme"
+                                                value="dark"
+                                                id="themeDark"
+                                            />
+                                            <span>🌙 Dark</span>
+                                        </label>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h4>Score Display</h4>
+                            <div class="settings-options">
+                                <label class="settings-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        id="showCombinedScore"
+                                    />
+                                    <span
+                                        >Show score (tiles +
+                                        position)</span
+                                    >
+                                </label>
+                                <label class="settings-checkbox">
+                                    <input type="checkbox" id="showTileScore" />
+                                    <span>Show tile score (left)</span>
+                                </label>
+                                <label class="settings-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        id="showPositionScore"
+                                    />
+                                    <span>Show position score (on hover)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <main>
                 <div class="game-section">
@@ -47,20 +131,51 @@
                         </div>
 
                         <!-- Special tiles guide -->
-                        <div class="special-tiles-section">
-                            <h4 class="special-tiles-title">Inputting special tiles:</h4>
-                            <div class="special-tiles-compact">
-                                <span class="special-tile-compact">
+                        <div class="special-info-section">
+                            <h4 class="special-info-title">Special tiles:</h4>
+                            <div class="special-info-compact">
+                                <span class="special-info-item-compact">
                                     <code>*</code> Wildcard
                                 </span>
-                                <span class="special-tile-compact coming-soon">
+                                <span
+                                    class="special-info-item-compact coming-soon"
+                                >
                                     <code>ING</code> Coming soon
                                 </span>
-                                <span class="special-tile-compact coming-soon">
+                                <span
+                                    class="special-info-item-compact coming-soon"
+                                >
                                     <code>QU</code> Coming soon
                                 </span>
-                                <span class="special-tile-compact coming-soon">
+                                <span
+                                    class="special-info-item-compact coming-soon"
+                                >
                                     <code>ERS</code> Coming soon
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Hotkeys guide -->
+                        <div class="special-info-section keyboard-shortcuts">
+                            <h4 class="special-info-title">
+                                Keyboard shortcuts:
+                            </h4>
+                            <div class="special-info-compact">
+                                <span class="special-info-item-compact">
+                                    <kbd>Enter</kbd> Find words
+                                </span>
+                                <span class="special-info-item-compact">
+                                    <kbd>Backspace</kbd> Clear & go back
+                                </span>
+                                <span class="special-info-item-compact">
+                                    <kbd>Delete</kbd> Clear cell
+                                </span>
+                                <span class="special-info-item-compact">
+                                    <kbd>Esc</kbd> Clear entire grid
+                                </span>
+                                <span class="special-info-item-compact">
+                                    <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd>
+                                    <kbd>→</kbd> Navigate
                                 </span>
                             </div>
                         </div>
@@ -130,15 +245,20 @@
                     <a
                         href="https://store.steampowered.com/app/3586660/Word_Play/"
                         >Word Play</a
-                    > |
-                    Wordlist last updated: <span id="lastUpdatedTimestamp">July 23, 2025</span>
+                    >
+                    | Wordlist last updated:
+                    <span id="lastUpdatedTimestamp">November 3, 2025</span>
                 </p>
                 <p>
                     Source code:
                     <a href="https://github.com/Nyveon/word-play-helper"
                         >GitHub</a
                     >
-                    (by Nyveon)
+                    (by Nyveon & various awesome
+                    <a
+                        href="https://github.com/Nyveon/word-play-helper?tab=readme-ov-file#contributing"
+                        >contributors</a
+                    >)
                 </p>
             </footer>
         </div>
