@@ -372,6 +372,12 @@ class WordPlayHelper {
     }
 
     handlePageClick(event) {
+        // Allow text selection
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0 && !selection.isCollapsed) {
+            return;
+        }
+
         // Check if clicked element or any parent is interactive
         let element = event.target;
         while (element) {
