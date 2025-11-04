@@ -7,23 +7,21 @@ Assistant and solver for the game ["Word Play"](https://store.steampowered.com/a
 ## Features
 
 -   Input your current letter grid (including bonus tiles). A-Z and wildcards (`*`) are supported.
--   Find all possible words with your current letters, ordered by length.
+-   Find all possible words with your current letters, sorted by length and base score.
 -   Filter results by prefix, suffix, infix.
 
 Changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ### Future Features
 
--   Unit tests
--   Dark mode
--   Keyboard shortcuts
+-   Unit tests (and some general code organization could be nice too)
 -   Allow for multi-letter tiles (`ing`, `qu`, etc.).
 -   Automatically remove tiles corresponding to selected word?
 -   Trie for efficient word lookup (sorting by alphabetical).
     -   Ideally built offline
     -   Would be very cool if the results updated as you type.
 -   Optimizer/solver (instead of just assistant/helper).
-    -   Part 1: including score per tile and bonus scores for length.
+    -   ~Part 1: including score per tile and bonus scores for length.~
     -   Part 2: include calculation using perks and such.
 -   Inputting tiles from a screenshot of the game board.
 -   👀 Have an idea for a new feature? Open an issue!
@@ -72,5 +70,5 @@ This is still very much a prototype, and I'm not sure what direction to take it.
 
 -   [@Nyveon](https://github.com/Nyveon) - Maintainer
 -   [@tampueroc](https://github.com/tampueroc) - Timestamp updating & documentation
--   [@nateify](https://github.com/nateify) - Base score calculation, wildcard underlines & new hotkeys.
+-   [@nateify](https://github.com/nateify) - Score calculations, wildcard underlines, and hotkeys.
 -   And all the steam users who have given feedback!
