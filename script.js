@@ -920,7 +920,7 @@ class WordPlayHelper {
         }
 
         const tileTitle = isSuffixTile
-            ? "! tile appends to the end of every word"
+            ? "! tile appends to every word and scores unsubmitted tiles"
             : isMultiLetterTile
             ? `${tileInput || value} tile counts as ${value}`
             : "";
@@ -1131,6 +1131,7 @@ class WordPlayHelper {
                           text: word[startIndex],
                           type: "wildcard",
                           upgrade: tile.upgrade,
+                          tileIndex: tile.index,
                       },
                   }
                 : null;
@@ -1143,6 +1144,7 @@ class WordPlayHelper {
                     text: tile.text,
                     type: tile.isMultiLetter ? "multi" : "normal",
                     upgrade: tile.upgrade,
+                    tileIndex: tile.index,
                 },
             };
         }
@@ -1196,7 +1198,7 @@ class WordPlayHelper {
         return tiles.filter((tile) => tile.isSuffix);
     }
 
-    createWordResult(baseWord, result, suffixTiles, isAchievementWord) {
+    createWordResult(baseWord, result, suffixTiles, allTiles, isAchievementWord) {
         const suffixText = suffixTiles.map((tile) => tile.text).join("");
         const word = `${baseWord}${suffixText}`;
         const segments = [...result.segments];
@@ -1205,10 +1207,23 @@ class WordPlayHelper {
                 text: tile.text,
                 type: "suffix",
                 upgrade: tile.upgrade,
+                tileIndex: tile.index,
             });
         });
 
-        const tileScore = result.score;
+        const submittedTileIndexes = new Set(
+            segments
+                .map((segment) => segment.tileIndex)
+                .filter((tileIndex) => tileIndex !== undefined)
+        );
+        const unsubmittedTileCount =
+            allTiles.length - submittedTileIndexes.size;
+        const suffixScore = suffixTiles.reduce(
+            (total, tile) =>
+                total + this.getTileScore(unsubmittedTileCount, tile.upgrade),
+            0
+        );
+        const tileScore = result.score + suffixScore;
         const positionScore = this.getPositionScore(word.length);
         const baseCombinedScore = tileScore + positionScore;
         const scoreMultiplier = this.getWordScoreMultiplier(segments);
@@ -1645,6 +1660,7 @@ class WordPlayHelper {
                                     word,
                                     result,
                                     suffixTiles,
+                                    tiles,
                                     this.achievementWords.has(word)
                                 )
                             );
@@ -1664,6 +1680,7 @@ class WordPlayHelper {
                                 word,
                                 result,
                                 suffixTiles,
+                                tiles,
                                 true
                             )
                         );
