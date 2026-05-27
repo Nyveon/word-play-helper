@@ -179,7 +179,30 @@
                     </div>
 
                     <div class="results-container">
-                        <h2 id="foundWordsHeader">Found Words</h2>
+                        <div class="results-header">
+                            <h2 id="foundWordsHeader">Found Words</h2>
+                            <div
+                                class="result-view-toggle"
+                                id="resultViewToggle"
+                                style="display: none"
+                                aria-label="Result view"
+                            >
+                                <button
+                                    type="button"
+                                    class="result-view-button active"
+                                    data-view-mode="length"
+                                >
+                                    By length
+                                </button>
+                                <button
+                                    type="button"
+                                    class="result-view-button"
+                                    data-view-mode="score"
+                                >
+                                    By score
+                                </button>
+                            </div>
+                        </div>
                         <div
                             class="achievement-results-note"
                             id="achievementResultsNote"
@@ -266,6 +289,6 @@
             </footer>
         </div>
 
-        <script src="script.js?v=upgrades-3"></script>
+        <script src="script.js?v=result-view-1"></script>
     </body>
 </html>

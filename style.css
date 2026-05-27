@@ -391,6 +391,49 @@ main {
     color: var(--text-primary);
 }
 
+.results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.results-header h2 {
+    margin-bottom: 0;
+}
+
+.result-view-toggle {
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    background: var(--background);
+    overflow: hidden;
+}
+
+.result-view-button {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 7px 10px;
+    white-space: nowrap;
+}
+
+.result-view-button:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.result-view-button.active {
+    background: var(--primary-color);
+    color: white;
+}
+
 /* Letter grid - 5x4 layout with extra slots in first column */
 .letter-grid {
     display: flex;
@@ -954,6 +997,10 @@ main {
     overflow: hidden;
 }
 
+.words-by-score {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
 .word {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -1179,6 +1226,11 @@ footer {
     .grid-container,
     .results-container {
         padding: 20px;
+    }
+
+    .results-header {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .letter-grid-5x4 {

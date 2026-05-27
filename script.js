@@ -5,6 +5,7 @@ class WordPlayHelper {
         this.isLoading = false;
         this.currentResults = []; // Store current unfiltered results
         this.currentTiles = []; // Store current tiles used
+        this.resultViewMode = "length";
         this.extraSlots = 0; // Track number of extra slots
         this.hoveredTileInput = null;
         this.pointerPosition = null;
@@ -795,6 +796,15 @@ class WordPlayHelper {
                 this.clearFilters();
             });
 
+        document
+            .getElementById("resultViewToggle")
+            .addEventListener("click", (e) => {
+                const button = e.target.closest("[data-view-mode]");
+                if (!button) return;
+
+                this.setResultViewMode(button.dataset.viewMode);
+            });
+
         document.addEventListener("click", this.handlePageClick.bind(this));
         document.addEventListener(
             "keydown",
@@ -988,6 +998,7 @@ class WordPlayHelper {
         const wordList = document.getElementById("wordList");
         const filtersSection = document.getElementById("filtersSection");
         const foundWordsHeader = document.getElementById("foundWordsHeader");
+        const resultViewToggle = document.getElementById("resultViewToggle");
         const achievementResultsNote = document.getElementById(
             "achievementResultsNote"
         );
@@ -995,6 +1006,7 @@ class WordPlayHelper {
         wordList.innerHTML =
             '<p class="placeholder">Enter letters and click "Find Words" to see results</p>';
         filtersSection.style.display = "none";
+        resultViewToggle.style.display = "none";
         foundWordsHeader.innerHTML = "Found Words";
         achievementResultsNote.innerHTML = "";
         achievementResultsNote.style.display = "none";
@@ -1236,6 +1248,21 @@ class WordPlayHelper {
         }
     }
 
+    setResultViewMode(viewMode) {
+        if (!["length", "score"].includes(viewMode)) return;
+
+        this.resultViewMode = viewMode;
+        document
+            .querySelectorAll("[data-view-mode]")
+            .forEach((button) => {
+                const isActive = button.dataset.viewMode === viewMode;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-pressed", String(isActive));
+            });
+
+        this.applyFilters();
+    }
+
     displayFilteredResults(words) {
         const wordList = document.getElementById("wordList");
 
@@ -1245,6 +1272,33 @@ class WordPlayHelper {
             return;
         }
 
+        if (this.resultViewMode === "score") {
+            this.displayScoreSortedResults(words);
+            return;
+        }
+
+        this.displayLengthGroupedResults(words);
+    }
+
+    displayScoreSortedResults(words) {
+        const wordList = document.getElementById("wordList");
+        const sortedWords = [...words].sort((a, b) => {
+            const scoreDiff = b.combinedScore - a.combinedScore;
+            if (scoreDiff !== 0) return scoreDiff;
+            const lengthDiff = b.word.length - a.word.length;
+            if (lengthDiff !== 0) return lengthDiff;
+            return a.word.localeCompare(b.word);
+        });
+
+        wordList.innerHTML = `
+            <div class="words words-by-score">
+                ${sortedWords.map((wordObj) => this.createWordHtml(wordObj)).join("")}
+            </div>
+        `;
+    }
+
+    displayLengthGroupedResults(words) {
+        const wordList = document.getElementById("wordList");
         const wordsByLength = words.reduce((acc, wordObj) => {
             const length = wordObj.word.length;
             if (!acc[length]) acc[length] = [];
@@ -1467,6 +1521,7 @@ class WordPlayHelper {
         const wordList = document.getElementById("wordList");
         const filtersSection = document.getElementById("filtersSection");
         const foundWordsHeader = document.getElementById("foundWordsHeader");
+        const resultViewToggle = document.getElementById("resultViewToggle");
         const achievementResultsNote = document.getElementById(
             "achievementResultsNote"
         );
@@ -1479,6 +1534,7 @@ class WordPlayHelper {
             wordList.innerHTML =
                 '<p class="placeholder">No words found with these letters.</p>';
             filtersSection.style.display = "none";
+            resultViewToggle.style.display = "none";
             foundWordsHeader.innerHTML = "Found Words";
             achievementResultsNote.innerHTML = "";
             achievementResultsNote.style.display = "none";
@@ -1488,6 +1544,7 @@ class WordPlayHelper {
 
         // Show filters section when there are results
         filtersSection.style.display = "block";
+        resultViewToggle.style.display = "inline-flex";
 
         // Update header with word count chip
         const totalWords = words.length;
