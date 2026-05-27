@@ -6,6 +6,7 @@ class WordPlayHelper {
         this.currentResults = []; // Store current unfiltered results
         this.currentTiles = []; // Store current tiles used
         this.resultViewMode = "length";
+        this.activeGameModifiers = Array(6).fill("none");
         this.extraSlots = 0; // Track number of extra slots
         this.hoveredTileInput = null;
         this.pointerPosition = null;
@@ -27,6 +28,28 @@ class WordPlayHelper {
             dot: {
                 label: "Dot",
                 scoreMultiplier: 1,
+            },
+        };
+        this.gameModifiers = {
+            none: {
+                label: "None",
+                type: "none",
+                color: "none",
+            },
+            idea: {
+                label: "IDEA",
+                type: "scoring",
+                color: "cyan",
+            },
+            r: {
+                label: "R",
+                type: "scoring",
+                color: "cyan",
+            },
+            hoot: {
+                label: "HOOT",
+                type: "interest",
+                color: "orange",
             },
         };
         this.letterScores = {
@@ -73,6 +96,7 @@ class WordPlayHelper {
         this.initializeGrid();
         this.initializeUpgradeMenu();
         this.attachEventListeners();
+        this.updateGameModifiers();
         this.loadWordList();
     }
 
@@ -805,6 +829,16 @@ class WordPlayHelper {
                 this.setResultViewMode(button.dataset.viewMode);
             });
 
+        document
+            .getElementById("gameModifierSlots")
+            .addEventListener("change", (e) => {
+                if (!e.target.classList.contains("game-modifier-select")) {
+                    return;
+                }
+
+                this.updateGameModifiers();
+            });
+
         document.addEventListener("click", this.handlePageClick.bind(this));
         document.addEventListener(
             "keydown",
@@ -1164,7 +1198,12 @@ class WordPlayHelper {
         const positionScore = this.getPositionScore(word.length);
         const baseCombinedScore = tileScore + positionScore;
         const scoreMultiplier = this.getWordScoreMultiplier(segments);
-        const combinedScore = baseCombinedScore * scoreMultiplier;
+        const upgradedScore = baseCombinedScore * scoreMultiplier;
+        const modifierResult = this.evaluateGameModifiers(
+            baseWord,
+            upgradedScore
+        );
+        const combinedScore = modifierResult.score;
 
         return {
             word,
@@ -1173,6 +1212,8 @@ class WordPlayHelper {
             positionScore,
             combinedScore,
             scoreMultiplier,
+            scoringModifiers: modifierResult.scoringModifiers,
+            interestModifiers: modifierResult.interestModifiers,
             segments,
             isAchievementWord,
         };
@@ -1246,6 +1287,83 @@ class WordPlayHelper {
         if (this.currentResults.length > 0) {
             this.displayFilteredResults(this.currentResults);
         }
+    }
+
+    updateGameModifiers() {
+        const selects = document.querySelectorAll(".game-modifier-select");
+        this.activeGameModifiers = Array.from(selects).map((select) => {
+            const value = this.gameModifiers[select.value]
+                ? select.value
+                : "none";
+            select.value = value;
+            select.dataset.modifierColor = this.gameModifiers[value].color;
+            return value;
+        });
+
+        if (this.getGridTiles().length > 0 && this.currentResults.length > 0) {
+            this.findWords();
+        }
+    }
+
+    getActiveGameModifiers() {
+        return this.activeGameModifiers.filter(
+            (modifier) => modifier !== "none"
+        );
+    }
+
+    countDistinctVowels(word) {
+        const vowels = new Set();
+        for (const letter of word) {
+            if ("AEIOU".includes(letter)) {
+                vowels.add(letter);
+            }
+        }
+        return vowels.size;
+    }
+
+    countLetters(word, letter) {
+        return [...word].filter((char) => char === letter).length;
+    }
+
+    hasLetterPair(word) {
+        for (let i = 1; i < word.length; i++) {
+            if (word[i] === word[i - 1]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    evaluateGameModifiers(baseWord, baseScore) {
+        let score = baseScore;
+        const scoringModifiers = [];
+        const interestModifiers = [];
+
+        this.getActiveGameModifiers().forEach((modifier) => {
+            if (modifier === "idea") {
+                if (this.countDistinctVowels(baseWord) >= 3) {
+                    score *= 2;
+                    scoringModifiers.push("IDEA");
+                }
+            } else if (modifier === "r") {
+                const rCount = this.countLetters(baseWord, "R");
+                score *= rCount;
+                scoringModifiers.push("R");
+            } else if (modifier === "hoot") {
+                if (this.hasLetterPair(baseWord)) {
+                    interestModifiers.push({
+                        label: "HOOT",
+                        color: "orange",
+                    });
+                }
+            }
+        });
+
+        return {
+            score,
+            scoringModifiers,
+            interestModifiers,
+        };
     }
 
     setResultViewMode(viewMode) {
@@ -1341,6 +1459,7 @@ class WordPlayHelper {
             segments,
             isHighScore,
             isAchievementWord,
+            interestModifiers,
         } = wordObj;
         const wordDisplay = this.createWordDisplay(word, segments);
 
@@ -1350,6 +1469,9 @@ class WordPlayHelper {
         }
         if (isAchievementWord) {
             classList.push("achievement-word");
+        }
+        if (interestModifiers && interestModifiers.length > 0) {
+            classList.push("modifier-interest-word");
         }
 
         return `
@@ -1361,10 +1483,24 @@ class WordPlayHelper {
                         ? '<span class="achievement-badge">Achievement</span>'
                         : ""
                 }
+                ${this.createModifierBadges(interestModifiers)}
                 <span class="word-score-position">${positionScore}</span>
                 <span class="word-score-combined">${combinedScore}</span>
             </div>
         `;
+    }
+
+    createModifierBadges(interestModifiers) {
+        if (!interestModifiers || interestModifiers.length === 0) {
+            return "";
+        }
+
+        return interestModifiers
+            .map(
+                (modifier) =>
+                    `<span class="modifier-badge modifier-badge-${modifier.color}">${modifier.label}</span>`
+            )
+            .join("");
     }
 
     createWordDisplay(word, segments) {
