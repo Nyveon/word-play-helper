@@ -422,155 +422,155 @@ main {
 
 /* Position inputs in 5x4 grid with left-to-right, top-to-bottom indexing */
 /* When extra slots are visible, use 5-column positioning */
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="0"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="0"] {
     grid-column: 1;
     grid-row: 1;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="1"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="1"] {
     grid-column: 2;
     grid-row: 1;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="2"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="2"] {
     grid-column: 3;
     grid-row: 1;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="3"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="3"] {
     grid-column: 4;
     grid-row: 1;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="4"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="4"] {
     grid-column: 5;
     grid-row: 1;
 }
 
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="5"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="5"] {
     grid-column: 1;
     grid-row: 2;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="6"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="6"] {
     grid-column: 2;
     grid-row: 2;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="7"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="7"] {
     grid-column: 3;
     grid-row: 2;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="8"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="8"] {
     grid-column: 4;
     grid-row: 2;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="9"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="9"] {
     grid-column: 5;
     grid-row: 2;
 }
 
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="10"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="10"] {
     grid-column: 1;
     grid-row: 3;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="11"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="11"] {
     grid-column: 2;
     grid-row: 3;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="12"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="12"] {
     grid-column: 3;
     grid-row: 3;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="13"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="13"] {
     grid-column: 4;
     grid-row: 3;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="14"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="14"] {
     grid-column: 5;
     grid-row: 3;
 }
 
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="15"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="15"] {
     grid-column: 1;
     grid-row: 4;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="16"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="16"] {
     grid-column: 2;
     grid-row: 4;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="17"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="17"] {
     grid-column: 3;
     grid-row: 4;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="18"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="18"] {
     grid-column: 4;
     grid-row: 4;
 }
-.letter-grid-5x4.has-extra-slots .letter-input[data-index="19"] {
+.letter-grid-5x4.has-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="19"] {
     grid-column: 5;
     grid-row: 4;
 }
 
 /* When no extra slots are visible, use 4-column positioning for main grid only */
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="1"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="1"] {
     grid-column: 1;
     grid-row: 1;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="2"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="2"] {
     grid-column: 2;
     grid-row: 1;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="3"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="3"] {
     grid-column: 3;
     grid-row: 1;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="4"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="4"] {
     grid-column: 4;
     grid-row: 1;
 }
 
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="6"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="6"] {
     grid-column: 1;
     grid-row: 2;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="7"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="7"] {
     grid-column: 2;
     grid-row: 2;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="8"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="8"] {
     grid-column: 3;
     grid-row: 2;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="9"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="9"] {
     grid-column: 4;
     grid-row: 2;
 }
 
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="11"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="11"] {
     grid-column: 1;
     grid-row: 3;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="12"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="12"] {
     grid-column: 2;
     grid-row: 3;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="13"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="13"] {
     grid-column: 3;
     grid-row: 3;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="14"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="14"] {
     grid-column: 4;
     grid-row: 3;
 }
 
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="16"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="16"] {
     grid-column: 1;
     grid-row: 4;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="17"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="17"] {
     grid-column: 2;
     grid-row: 4;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="18"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="18"] {
     grid-column: 3;
     grid-row: 4;
 }
-.letter-grid-5x4.no-extra-slots .letter-input[data-index="19"] {
+.letter-grid-5x4.no-extra-slots :is(.letter-input, .tile-upgrade-marker)[data-index="19"] {
     grid-column: 4;
     grid-row: 4;
 }
@@ -644,6 +644,34 @@ main {
     box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.28);
 }
 
+.letter-input.dot-input {
+    background-color: #dc2626;
+    border-color: #991b1b;
+    color: white;
+}
+
+.tile-upgrade-marker {
+    align-self: center;
+    color: white;
+    display: none;
+    font-size: 1.6rem;
+    font-weight: 800;
+    justify-self: end;
+    line-height: 1;
+    margin-right: 9px;
+    margin-top: -2px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.tile-upgrade-marker.visible {
+    display: block;
+}
+
+.letter-input.dot-input::placeholder {
+    color: white;
+}
+
 .upgrade-menu {
     position: fixed;
     z-index: 1100;
@@ -676,6 +704,12 @@ main {
 .upgrade-menu-item[data-upgrade="emerald"].selected,
 .upgrade-menu-item[data-upgrade="emerald"]:hover {
     background: rgba(16, 185, 129, 0.14);
+    color: var(--text-primary);
+}
+
+.upgrade-menu-item[data-upgrade="dot"].selected,
+.upgrade-menu-item[data-upgrade="dot"]:hover {
+    background: rgba(17, 24, 39, 0.1);
     color: var(--text-primary);
 }
 

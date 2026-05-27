@@ -23,6 +23,10 @@ class WordPlayHelper {
                 label: "Emerald",
                 scoreMultiplier: 2,
             },
+            dot: {
+                label: "Dot",
+                scoreMultiplier: 1,
+            },
         };
         this.letterScores = {
             A: 1,
@@ -207,6 +211,7 @@ class WordPlayHelper {
             }
 
             mainGrid.appendChild(input);
+            mainGrid.appendChild(this.createUpgradeMarker(i));
         }
 
         gridContainer.appendChild(mainGrid);
@@ -251,6 +256,14 @@ class WordPlayHelper {
         return input;
     }
 
+    createUpgradeMarker(index) {
+        const marker = document.createElement("span");
+        marker.className = "tile-upgrade-marker";
+        marker.dataset.index = index;
+        marker.textContent = ".";
+        return marker;
+    }
+
     normalizeLetterInput(input) {
         if (input.dataset.tileInput) {
             return;
@@ -274,6 +287,7 @@ class WordPlayHelper {
         menu.innerHTML = `
             <button type="button" class="upgrade-menu-item" data-upgrade="none">None</button>
             <button type="button" class="upgrade-menu-item" data-upgrade="emerald">Emerald</button>
+            <button type="button" class="upgrade-menu-item" data-upgrade="dot">Dot</button>
         `;
         document.body.appendChild(menu);
 
@@ -630,6 +644,7 @@ class WordPlayHelper {
         const upgradeByKey = {
             N: "none",
             E: "emerald",
+            D: "dot",
         };
         const upgrade = upgradeByKey[event.key.toUpperCase()];
         const input = this.getHoveredUpgradeInput();
@@ -840,6 +855,13 @@ class WordPlayHelper {
         );
         input.classList.toggle("suffix-input", isSuffixTile);
         input.classList.toggle("emerald-input", upgrade === "emerald");
+        input.classList.toggle("dot-input", upgrade === "dot");
+        const marker = document.querySelector(
+            `.tile-upgrade-marker[data-index="${input.dataset.index}"]`
+        );
+        if (marker) {
+            marker.classList.toggle("visible", upgrade === "dot");
+        }
 
         const tileTitle = isSuffixTile
             ? "! tile appends to the end of every word"
@@ -847,7 +869,11 @@ class WordPlayHelper {
             ? `${tileInput || value} tile counts as ${value}`
             : "";
         const upgradeTitle =
-            upgrade === "emerald" ? "Emerald: expected 2x tile score" : "";
+            upgrade === "emerald"
+                ? "Emerald: expected 2x tile score"
+                : upgrade === "dot"
+                ? "Dot: doubles the word score when this is the last tile"
+                : "";
         input.title = [tileTitle, upgradeTitle].filter(Boolean).join(" | ");
     }
 
@@ -1044,6 +1070,7 @@ class WordPlayHelper {
                       segment: {
                           text: word[startIndex],
                           type: "wildcard",
+                          upgrade: tile.upgrade,
                       },
                   }
                 : null;
@@ -1055,6 +1082,7 @@ class WordPlayHelper {
                 segment: {
                     text: tile.text,
                     type: tile.isMultiLetter ? "multi" : "normal",
+                    upgrade: tile.upgrade,
                 },
             };
         }
@@ -1104,26 +1132,27 @@ class WordPlayHelper {
         return search(0, 0, []);
     }
 
-    getSuffixText(tiles) {
-        return tiles
-            .filter((tile) => tile.isSuffix)
-            .map((tile) => tile.text)
-            .join("");
+    getSuffixTiles(tiles) {
+        return tiles.filter((tile) => tile.isSuffix);
     }
 
-    createWordResult(baseWord, result, suffixText, isAchievementWord) {
+    createWordResult(baseWord, result, suffixTiles, isAchievementWord) {
+        const suffixText = suffixTiles.map((tile) => tile.text).join("");
         const word = `${baseWord}${suffixText}`;
         const segments = [...result.segments];
-        if (suffixText) {
+        suffixTiles.forEach((tile) => {
             segments.push({
-                text: suffixText,
+                text: tile.text,
                 type: "suffix",
+                upgrade: tile.upgrade,
             });
-        }
+        });
 
         const tileScore = result.score;
         const positionScore = this.getPositionScore(word.length);
-        const combinedScore = tileScore + positionScore;
+        const baseCombinedScore = tileScore + positionScore;
+        const scoreMultiplier = this.getWordScoreMultiplier(segments);
+        const combinedScore = baseCombinedScore * scoreMultiplier;
 
         return {
             word,
@@ -1131,9 +1160,15 @@ class WordPlayHelper {
             tileScore,
             positionScore,
             combinedScore,
+            scoreMultiplier,
             segments,
             isAchievementWord,
         };
+    }
+
+    getWordScoreMultiplier(segments) {
+        const lastSegment = segments[segments.length - 1];
+        return lastSegment?.upgrade === "dot" ? 2 : 1;
     }
 
     getPositionScore(length) {
@@ -1356,7 +1391,7 @@ class WordPlayHelper {
         setTimeout(() => {
             try {
                 const foundWords = [];
-                const suffixText = this.getSuffixText(tiles);
+                const suffixTiles = this.getSuffixTiles(tiles);
                 this.wordList.forEach((word) => {
                     if (word.length >= 4) {
                         const result = this.canFormWord(word, tiles);
@@ -1365,7 +1400,7 @@ class WordPlayHelper {
                                 this.createWordResult(
                                     word,
                                     result,
-                                    suffixText,
+                                    suffixTiles,
                                     this.achievementWords.has(word)
                                 )
                             );
@@ -1384,7 +1419,7 @@ class WordPlayHelper {
                             this.createWordResult(
                                 word,
                                 result,
-                                suffixText,
+                                suffixTiles,
                                 true
                             )
                         );
