@@ -51,6 +51,11 @@ class WordPlayHelper {
                 type: "interest",
                 color: "orange",
             },
+            done: {
+                label: "DONE",
+                type: "interest",
+                color: "orange",
+            },
         };
         this.letterScores = {
             A: 1,
@@ -1334,6 +1339,33 @@ class WordPlayHelper {
         return false;
     }
 
+    getContainedNumberWord(word) {
+        const numberWords = [
+            "ONE",
+            "TWO",
+            "THREE",
+            "FOUR",
+            "FIVE",
+            "SIX",
+            "SEVEN",
+            "EIGHT",
+            "NINE",
+            "TEN",
+            "ELEVEN",
+            "TWELVE",
+            "THIRTEEN",
+            "FOURTEEN",
+            "FIFTEEN",
+            "SIXTEEN",
+            "SEVENTEEN",
+            "EIGHTEEN",
+            "NINETEEN",
+            "TWENTY",
+        ];
+
+        return numberWords.find((numberWord) => word.includes(numberWord));
+    }
+
     evaluateGameModifiers(baseWord, baseScore) {
         let score = baseScore;
         const scoringModifiers = [];
@@ -1353,6 +1385,14 @@ class WordPlayHelper {
                 if (this.hasLetterPair(baseWord)) {
                     interestModifiers.push({
                         label: "HOOT",
+                        color: "orange",
+                    });
+                }
+            } else if (modifier === "done") {
+                const numberWord = this.getContainedNumberWord(baseWord);
+                if (numberWord) {
+                    interestModifiers.push({
+                        label: `DONE: ${numberWord}`,
                         color: "orange",
                     });
                 }
