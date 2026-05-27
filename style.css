@@ -623,6 +623,16 @@ main {
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
 }
 
+.letter-input.suffix-input {
+    border-color: var(--warning);
+    background-color: rgba(245, 158, 11, 0.12);
+}
+
+.letter-input.suffix-input:focus {
+    border-color: var(--warning);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
 /* Extra slots control */
 .extra-slots-control {
     display: flex;
@@ -975,6 +985,18 @@ body.hide-position-score .word:hover .word-score-combined {
 .word.achievement-word:hover .multi-letter-tile {
     background: white;
     color: var(--success);
+}
+
+.suffix-letter {
+    display: inline-block;
+    padding: 0 3px;
+    color: var(--warning);
+    font-weight: 800;
+}
+
+.word:hover .suffix-letter,
+.word.achievement-word:hover .suffix-letter {
+    color: white;
 }
 
 .placeholder {
