@@ -6,6 +6,7 @@ class WordPlayHelper {
         this.currentResults = []; // Store current unfiltered results
         this.currentLetters = []; // Store current letters used
         this.extraSlots = 0; // Track number of extra slots
+        this.achievementWords = new Set(["WORDPLAY", "MAGNET"]);
         this.letterScores = {
             A: 1,
             B: 3,
@@ -589,11 +590,17 @@ class WordPlayHelper {
         const wordList = document.getElementById("wordList");
         const filtersSection = document.getElementById("filtersSection");
         const foundWordsHeader = document.getElementById("foundWordsHeader");
+        const achievementResultsNote = document.getElementById(
+            "achievementResultsNote"
+        );
 
         wordList.innerHTML =
             '<p class="placeholder">Enter letters and click "Find Words" to see results</p>';
         filtersSection.style.display = "none";
         foundWordsHeader.innerHTML = "Found Words";
+        achievementResultsNote.innerHTML = "";
+        achievementResultsNote.style.display = "none";
+        achievementResultsNote.classList.remove("has-achievement");
 
         // Clear stored results
         this.currentResults = [];
@@ -773,6 +780,7 @@ class WordPlayHelper {
             combinedScore,
             usedWildcardIndices,
             isHighScore,
+            isAchievementWord,
         } = wordObj;
         let wordDisplay = "";
 
@@ -792,11 +800,19 @@ class WordPlayHelper {
         if (isHighScore) {
             classList.push("highlight-score");
         }
+        if (isAchievementWord) {
+            classList.push("achievement-word");
+        }
 
         return `
             <div class="${classList.join(" ")}" alt="${combinedScore}">
                 <span class="word-score-tile">${tileScore}</span>
                 <span class="word-text">${wordDisplay}</span>
+                ${
+                    isAchievementWord
+                        ? '<span class="achievement-badge">Achievement</span>'
+                        : ""
+                }
                 <span class="word-score-position">${positionScore}</span>
                 <span class="word-score-combined">${combinedScore}</span>
             </div>
@@ -875,8 +891,33 @@ class WordPlayHelper {
                                 positionScore,
                                 combinedScore,
                                 usedWildcardIndices: result.usedWildcardIndices,
+                                isAchievementWord:
+                                    this.achievementWords.has(word),
                             });
                         }
+                    }
+                });
+
+                this.achievementWords.forEach((word) => {
+                    if (foundWords.some((wordObj) => wordObj.word === word)) {
+                        return;
+                    }
+
+                    const result = this.canFormWord(word, letters);
+                    if (result) {
+                        const tileScore = result.score;
+                        const positionScore = this.getPositionScore(
+                            word.length
+                        );
+                        const combinedScore = tileScore + positionScore;
+                        foundWords.push({
+                            word,
+                            tileScore,
+                            positionScore,
+                            combinedScore,
+                            usedWildcardIndices: result.usedWildcardIndices,
+                            isAchievementWord: true,
+                        });
                     }
                 });
 
@@ -921,6 +962,9 @@ class WordPlayHelper {
         const wordList = document.getElementById("wordList");
         const filtersSection = document.getElementById("filtersSection");
         const foundWordsHeader = document.getElementById("foundWordsHeader");
+        const achievementResultsNote = document.getElementById(
+            "achievementResultsNote"
+        );
 
         // Store current results for filtering
         this.currentResults = words;
@@ -931,6 +975,9 @@ class WordPlayHelper {
                 '<p class="placeholder">No words found with these letters.</p>';
             filtersSection.style.display = "none";
             foundWordsHeader.innerHTML = "Found Words";
+            achievementResultsNote.innerHTML = "";
+            achievementResultsNote.style.display = "none";
+            achievementResultsNote.classList.remove("has-achievement");
             return;
         }
 
@@ -940,6 +987,21 @@ class WordPlayHelper {
         // Update header with word count chip
         const totalWords = words.length;
         foundWordsHeader.innerHTML = `Found Words <span class="word-count">${totalWords}</span>`;
+
+        const achievementWordsFound = words
+            .filter((wordObj) => wordObj.isAchievementWord)
+            .map((wordObj) => wordObj.word);
+        if (achievementWordsFound.length > 0) {
+            achievementResultsNote.innerHTML = `Achievement available: <strong>${achievementWordsFound.join(
+                "</strong>, <strong>"
+            )}</strong>`;
+            achievementResultsNote.style.display = "block";
+            achievementResultsNote.classList.add("has-achievement");
+        } else {
+            achievementResultsNote.innerHTML = "";
+            achievementResultsNote.style.display = "none";
+            achievementResultsNote.classList.remove("has-achievement");
+        }
 
         // Apply existing filters if any, otherwise display all results
         this.applyFilters();
