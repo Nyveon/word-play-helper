@@ -693,6 +693,17 @@ main {
     color: white;
 }
 
+.letter-input.gold-input {
+    background-color: #facc15;
+    border-color: #ca8a04;
+    color: #1e293b;
+}
+
+.letter-input.gold-input:focus {
+    border-color: #eab308;
+    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.28);
+}
+
 .tile-upgrade-marker {
     align-self: center;
     color: white;
@@ -753,6 +764,12 @@ main {
 .upgrade-menu-item[data-upgrade="dot"].selected,
 .upgrade-menu-item[data-upgrade="dot"]:hover {
     background: rgba(17, 24, 39, 0.1);
+    color: var(--text-primary);
+}
+
+.upgrade-menu-item[data-upgrade="gold"].selected,
+.upgrade-menu-item[data-upgrade="gold"]:hover {
+    background: rgba(250, 204, 21, 0.22);
     color: var(--text-primary);
 }
 

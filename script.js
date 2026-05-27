@@ -29,6 +29,10 @@ class WordPlayHelper {
                 label: "Dot",
                 scoreMultiplier: 1,
             },
+            gold: {
+                label: "Gold",
+                scoreMultiplier: 1,
+            },
         };
         this.gameModifiers = {
             none: {
@@ -318,6 +322,7 @@ class WordPlayHelper {
             <button type="button" class="upgrade-menu-item" data-upgrade="none">None</button>
             <button type="button" class="upgrade-menu-item" data-upgrade="emerald">Emerald</button>
             <button type="button" class="upgrade-menu-item" data-upgrade="dot">Dot</button>
+            <button type="button" class="upgrade-menu-item" data-upgrade="gold">Gold</button>
         `;
         document.body.appendChild(menu);
 
@@ -675,6 +680,7 @@ class WordPlayHelper {
             N: "none",
             E: "emerald",
             D: "dot",
+            G: "gold",
         };
         const upgrade = upgradeByKey[event.key.toUpperCase()];
         const input = this.getHoveredUpgradeInput();
@@ -905,6 +911,7 @@ class WordPlayHelper {
         input.classList.toggle("suffix-input", isSuffixTile);
         input.classList.toggle("emerald-input", upgrade === "emerald");
         input.classList.toggle("dot-input", upgrade === "dot");
+        input.classList.toggle("gold-input", upgrade === "gold");
         const marker = document.querySelector(
             `.tile-upgrade-marker[data-index="${input.dataset.index}"]`
         );
@@ -922,6 +929,8 @@ class WordPlayHelper {
                 ? "Emerald: expected 2x tile score"
                 : upgrade === "dot"
                 ? "Dot: doubles the word score when this is the last tile"
+                : upgrade === "gold"
+                ? "Gold: multiplies word score by the number of Gold tiles used"
                 : "";
         input.title = [tileTitle, upgradeTitle].filter(Boolean).join(" | ");
     }
@@ -1226,7 +1235,12 @@ class WordPlayHelper {
 
     getWordScoreMultiplier(segments) {
         const lastSegment = segments[segments.length - 1];
-        return lastSegment?.upgrade === "dot" ? 2 : 1;
+        const dotMultiplier = lastSegment?.upgrade === "dot" ? 2 : 1;
+        const goldCount = segments.filter(
+            (segment) => segment.upgrade === "gold"
+        ).length;
+        const goldMultiplier = goldCount > 0 ? goldCount : 1;
+        return dotMultiplier * goldMultiplier;
     }
 
     getPositionScore(length) {
