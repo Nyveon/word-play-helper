@@ -4,9 +4,14 @@ class WordPlayHelper {
         this.letterGrid = [];
         this.isLoading = false;
         this.currentResults = []; // Store current unfiltered results
-        this.currentLetters = []; // Store current letters used
+        this.currentTiles = []; // Store current tiles used
         this.extraSlots = 0; // Track number of extra slots
         this.achievementWords = new Set(["WORDPLAY", "MAGNET"]);
+        this.multiLetterTiles = {
+            I: "ING",
+            E: "ERS",
+            Q: "QU",
+        };
         this.letterScores = {
             A: 1,
             B: 3,
@@ -201,15 +206,13 @@ class WordPlayHelper {
         const input = document.createElement("input");
         input.type = "text";
         input.className = "letter-input";
-        input.maxLength = 1;
+        input.maxLength = 3;
         input.dataset.index = index;
 
         // Add input event listener for auto-advance
         input.addEventListener("input", (e) => {
-            // Filter to only allow A-Z letters and asterisks (wildcards)
-            e.target.value = e.target.value
-                .replace(/[^A-Za-z*]/g, "")
-                .toUpperCase();
+            this.normalizeLetterInput(e.target);
+            this.updateInputTileClass(e.target);
             this.handleLetterInput(e);
         });
 
@@ -219,6 +222,20 @@ class WordPlayHelper {
         });
 
         return input;
+    }
+
+    normalizeLetterInput(input) {
+        if (input.dataset.tileInput) {
+            return;
+        }
+
+        const value = input.value.replace(/[^A-Za-z*]/g, "");
+        if (!value) {
+            input.value = "";
+            return;
+        }
+
+        input.value = value[value.length - 1].toUpperCase();
     }
 
     updateExtraSlots() {
@@ -240,6 +257,7 @@ class WordPlayHelper {
                     input.style.display = "none";
                     input.style.visibility = "hidden";
                     input.value = ""; // Clear value when hiding
+                    this.updateInputTileClass(input);
                 }
             }
         }
@@ -277,7 +295,58 @@ class WordPlayHelper {
         }
     }
 
+    moveToNextVisibleInput(index) {
+        const totalInputs = 20;
+        if (index >= totalInputs - 1) return;
+
+        let nextIndex = index + 1;
+        while (nextIndex < totalInputs) {
+            const nextInput = document.querySelector(
+                `[data-index="${nextIndex}"]`
+            );
+            if (nextInput && nextInput.style.display !== "none") {
+                nextInput.focus();
+                break;
+            }
+            nextIndex++;
+        }
+    }
+
+    setInputTile(input, tileInput) {
+        const tileText = this.multiLetterTiles[tileInput] || tileInput;
+        input.value = tileText;
+
+        if (this.multiLetterTiles[tileInput]) {
+            input.dataset.tileInput = tileInput;
+        } else {
+            delete input.dataset.tileInput;
+        }
+
+        this.updateInputTileClass(input);
+    }
+
+    handleSpecialTileKey(e) {
+        if (
+            e.ctrlKey ||
+            e.altKey ||
+            e.metaKey ||
+            !e.shiftKey ||
+            !this.multiLetterTiles[e.key]
+        ) {
+            return false;
+        }
+
+        e.preventDefault();
+        this.setInputTile(e.target, e.key);
+        this.moveToNextVisibleInput(parseInt(e.target.dataset.index));
+        return true;
+    }
+
     handleKeyNavigation(e) {
+        if (this.handleSpecialTileKey(e)) {
+            return;
+        }
+
         const index = parseInt(e.target.dataset.index);
         const totalInputs = 20;
         let newIndex = index;
@@ -310,10 +379,14 @@ class WordPlayHelper {
             case "Delete":
                 e.preventDefault();
                 e.target.value = "";
+                delete e.target.dataset.tileInput;
+                this.updateInputTileClass(e.target);
                 return;
             case "Backspace":
                 e.preventDefault(); // Prevent default browser action
                 e.target.value = ""; // Clear the current input's value
+                delete e.target.dataset.tileInput;
+                this.updateInputTileClass(e.target);
 
                 if (index > 0) {
                     // Find the previous visible input to focus
@@ -557,16 +630,81 @@ class WordPlayHelper {
         }
     }
 
-    getGridLetters() {
+    updateInputTileClass(input) {
+        const value = input.value.toUpperCase();
+        const tileInput = input.dataset.tileInput;
+        const isMultiLetterTile =
+            Boolean(tileInput && this.multiLetterTiles[tileInput]) ||
+            Object.values(this.multiLetterTiles).includes(value);
+
+        input.classList.toggle(
+            "multi-letter-input",
+            isMultiLetterTile
+        );
+        input.title = isMultiLetterTile
+            ? `${tileInput || value} tile counts as ${value}`
+            : "";
+    }
+
+    createTile(input, index) {
+        const value = input.value.toUpperCase();
+        if (!value) return null;
+
+        const specialTileInput =
+            input.dataset.tileInput ||
+            Object.entries(this.multiLetterTiles).find(
+                ([, tileText]) => tileText === value
+            )?.[0];
+        if (specialTileInput) {
+            const tileText = this.multiLetterTiles[specialTileInput];
+            return {
+                input: specialTileInput,
+                text: tileText,
+                letters: [...tileText],
+                score: this.letterScores[specialTileInput] || 0,
+                index,
+                isWildcard: false,
+                isMultiLetter: true,
+            };
+        }
+
+        if (value === "*") {
+            return {
+                input: value,
+                text: value,
+                letters: [],
+                score: 0,
+                index,
+                isWildcard: true,
+                isMultiLetter: false,
+            };
+        }
+
+        return {
+            input: value,
+            text: value,
+            letters: [value],
+            score: this.letterScores[value] || 0,
+            index,
+            isWildcard: false,
+            isMultiLetter: false,
+        };
+    }
+
+    getGridTiles() {
         const inputs = document.querySelectorAll(".letter-input");
         return Array.from(inputs)
-            .map((input) => input.value.toUpperCase())
-            .filter((letter) => letter);
+            .map((input, index) => this.createTile(input, index))
+            .filter((tile) => tile);
     }
 
     clearGrid() {
         const inputs = document.querySelectorAll(".letter-input");
-        inputs.forEach((input) => (input.value = ""));
+        inputs.forEach((input) => {
+            input.value = "";
+            delete input.dataset.tileInput;
+            this.updateInputTileClass(input);
+        });
 
         // Focus on the first visible input
         // With the new indexing, find the first input that's not hidden
@@ -604,7 +742,7 @@ class WordPlayHelper {
 
         // Clear stored results
         this.currentResults = [];
-        this.currentLetters = [];
+        this.currentTiles = [];
 
         // Clear filters
         this.clearFilters();
@@ -633,36 +771,101 @@ class WordPlayHelper {
         wordList.innerHTML = `<p class="placeholder" style="color: var(--error);">${message}</p>`;
     }
 
-    canFormWord(word, availableLetters) {
+    passesLetterCountFilter(word, availableTiles) {
         const letterCount = {};
         let wildcardCount = 0;
 
-        // Count available letters and wildcards separately
-        for (const letter of availableLetters) {
-            if (letter === "*") {
+        // Count expanded tile letters and one-character wildcards separately.
+        for (const tile of availableTiles) {
+            if (tile.isWildcard) {
                 wildcardCount++;
             } else {
-                letterCount[letter] = (letterCount[letter] || 0) + 1;
+                for (const letter of tile.letters) {
+                    letterCount[letter] = (letterCount[letter] || 0) + 1;
+                }
             }
         }
-
-        let score = 0;
-        const usedWildcardIndices = [];
 
         for (let i = 0; i < word.length; i++) {
             const letter = word[i];
             if (letterCount[letter] > 0) {
                 letterCount[letter]--;
-                score += this.letterScores[letter] || 0;
             } else if (wildcardCount > 0) {
                 wildcardCount--;
-                usedWildcardIndices.push(i);
-                // Wildcards have a score of 0
             } else {
                 return false;
             }
         }
-        return { score, usedWildcardIndices };
+
+        return true;
+    }
+
+    canTileMatchAt(word, startIndex, tile) {
+        if (tile.isWildcard) {
+            return startIndex < word.length
+                ? {
+                      endIndex: startIndex + 1,
+                      segment: {
+                          text: word[startIndex],
+                          type: "wildcard",
+                      },
+                  }
+                : null;
+        }
+
+        if (word.startsWith(tile.text, startIndex)) {
+            return {
+                endIndex: startIndex + tile.text.length,
+                segment: {
+                    text: tile.text,
+                    type: tile.isMultiLetter ? "multi" : "normal",
+                },
+            };
+        }
+
+        return null;
+    }
+
+    canFormWord(word, availableTiles) {
+        if (!this.passesLetterCountFilter(word, availableTiles)) {
+            return false;
+        }
+
+        const tiles = [...availableTiles].sort((a, b) => {
+            if (a.isWildcard !== b.isWildcard) {
+                return a.isWildcard ? 1 : -1;
+            }
+            return b.text.length - a.text.length;
+        });
+        const usedTiles = new Array(tiles.length).fill(false);
+
+        const search = (wordIndex, score, segments) => {
+            if (wordIndex === word.length) {
+                return { score, segments };
+            }
+
+            for (let i = 0; i < tiles.length; i++) {
+                if (usedTiles[i]) continue;
+
+                const match = this.canTileMatchAt(word, wordIndex, tiles[i]);
+                if (!match) continue;
+
+                usedTiles[i] = true;
+                const result = search(
+                    match.endIndex,
+                    score + tiles[i].score,
+                    [...segments, match.segment]
+                );
+                if (result) {
+                    return result;
+                }
+                usedTiles[i] = false;
+            }
+
+            return false;
+        };
+
+        return search(0, 0, []);
     }
 
     getPositionScore(length) {
@@ -778,23 +981,11 @@ class WordPlayHelper {
             tileScore,
             positionScore,
             combinedScore,
-            usedWildcardIndices,
+            segments,
             isHighScore,
             isAchievementWord,
         } = wordObj;
-        let wordDisplay = "";
-
-        if (usedWildcardIndices && usedWildcardIndices.length > 0) {
-            wordDisplay += [...word]
-                .map((char, index) =>
-                    usedWildcardIndices.includes(index)
-                        ? `<span class="wildcard-letter">${char}</span>`
-                        : char
-                )
-                .join("");
-        } else {
-            wordDisplay = word;
-        }
+        const wordDisplay = this.createWordDisplay(word, segments);
 
         const classList = ["word"];
         if (isHighScore) {
@@ -817,6 +1008,24 @@ class WordPlayHelper {
                 <span class="word-score-combined">${combinedScore}</span>
             </div>
         `;
+    }
+
+    createWordDisplay(word, segments) {
+        if (!segments || segments.length === 0) {
+            return word;
+        }
+
+        return segments
+            .map((segment) => {
+                if (segment.type === "wildcard") {
+                    return `<span class="wildcard-letter">${segment.text}</span>`;
+                }
+                if (segment.type === "multi") {
+                    return `<span class="multi-letter-tile">${segment.text}</span>`;
+                }
+                return segment.text;
+            })
+            .join("");
     }
 
     attachCollapseHandlers() {
@@ -859,8 +1068,8 @@ class WordPlayHelper {
     async findWords() {
         if (this.isLoading) return;
 
-        const letters = this.getGridLetters();
-        if (letters.length === 0) {
+        const tiles = this.getGridTiles();
+        if (tiles.length === 0) {
             this.showError("Please enter some letters first.");
             return;
         }
@@ -878,7 +1087,7 @@ class WordPlayHelper {
                 const foundWords = [];
                 this.wordList.forEach((word) => {
                     if (word.length >= 4) {
-                        const result = this.canFormWord(word, letters);
+                        const result = this.canFormWord(word, tiles);
                         if (result) {
                             const tileScore = result.score;
                             const positionScore = this.getPositionScore(
@@ -890,7 +1099,7 @@ class WordPlayHelper {
                                 tileScore,
                                 positionScore,
                                 combinedScore,
-                                usedWildcardIndices: result.usedWildcardIndices,
+                                segments: result.segments,
                                 isAchievementWord:
                                     this.achievementWords.has(word),
                             });
@@ -903,7 +1112,7 @@ class WordPlayHelper {
                         return;
                     }
 
-                    const result = this.canFormWord(word, letters);
+                    const result = this.canFormWord(word, tiles);
                     if (result) {
                         const tileScore = result.score;
                         const positionScore = this.getPositionScore(
@@ -915,7 +1124,7 @@ class WordPlayHelper {
                             tileScore,
                             positionScore,
                             combinedScore,
-                            usedWildcardIndices: result.usedWildcardIndices,
+                            segments: result.segments,
                             isAchievementWord: true,
                         });
                     }
@@ -948,7 +1157,7 @@ class WordPlayHelper {
                     });
                 }
 
-                this.displayResults(foundWords, letters);
+                this.displayResults(foundWords, tiles);
                 this.hideLoading();
             } catch (error) {
                 console.error("Error finding words:", error);
@@ -958,7 +1167,7 @@ class WordPlayHelper {
         }, 100);
     }
 
-    displayResults(words, letters) {
+    displayResults(words, tiles) {
         const wordList = document.getElementById("wordList");
         const filtersSection = document.getElementById("filtersSection");
         const foundWordsHeader = document.getElementById("foundWordsHeader");
@@ -968,7 +1177,7 @@ class WordPlayHelper {
 
         // Store current results for filtering
         this.currentResults = words;
-        this.currentLetters = letters;
+        this.currentTiles = tiles;
 
         if (words.length === 0) {
             wordList.innerHTML =

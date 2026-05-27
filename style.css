@@ -611,6 +611,18 @@ main {
     border-color: var(--primary-hover);
 }
 
+.letter-input.multi-letter-input {
+    border-color: var(--success);
+    background-color: rgba(16, 185, 129, 0.12);
+    font-size: 1.1rem;
+    letter-spacing: 0;
+}
+
+.letter-input.multi-letter-input:focus {
+    border-color: var(--success);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+
 /* Extra slots control */
 .extra-slots-control {
     display: flex;
@@ -950,6 +962,21 @@ body.hide-position-score .word:hover .word-score-combined {
     text-underline-offset: 2px;
 }
 
+.multi-letter-tile {
+    display: inline-block;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: rgba(16, 185, 129, 0.16);
+    color: var(--success);
+    font-weight: 700;
+}
+
+.word:hover .multi-letter-tile,
+.word.achievement-word:hover .multi-letter-tile {
+    background: white;
+    color: var(--success);
+}
+
 .placeholder {
     text-align: center;
     color: var(--text-secondary);
@@ -1141,10 +1168,6 @@ footer {
     color: var(--text-secondary);
 }
 
-.special-info-item-compact.coming-soon {
-    opacity: 0.5;
-}
-
 .special-info-item-compact code {
     background: var(--primary-color);
     color: white;
@@ -1191,8 +1214,4 @@ footer {
         border-bottom-color: #0f172a;
         box-shadow: 0 2px 0 0 #1e293b, 0 2px 4px rgba(0, 0, 0, 0.3);
     }
-}
-
-.special-info-item-compact.coming-soon code {
-    background: var(--secondary-color);
 }
