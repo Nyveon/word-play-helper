@@ -6,11 +6,23 @@ class WordPlayHelper {
         this.currentResults = []; // Store current unfiltered results
         this.currentTiles = []; // Store current tiles used
         this.extraSlots = 0; // Track number of extra slots
+        this.hoveredTileInput = null;
+        this.pointerPosition = null;
         this.achievementWords = new Set(["WORDPLAY", "MAGNET"]);
         this.multiLetterTiles = {
             I: "ING",
             E: "ERS",
             Q: "QU",
+        };
+        this.tileUpgrades = {
+            none: {
+                label: "None",
+                scoreMultiplier: 1,
+            },
+            emerald: {
+                label: "Emerald",
+                scoreMultiplier: 2,
+            },
         };
         this.letterScores = {
             A: 1,
@@ -54,6 +66,7 @@ class WordPlayHelper {
         this.initializeTheme();
         this.initializeSettings();
         this.initializeGrid();
+        this.initializeUpgradeMenu();
         this.attachEventListeners();
         this.loadWordList();
     }
@@ -221,6 +234,20 @@ class WordPlayHelper {
             this.handleKeyNavigation(e);
         });
 
+        input.addEventListener("contextmenu", (e) => {
+            this.handleTileContextMenu(e);
+        });
+
+        input.addEventListener("mouseenter", () => {
+            this.hoveredTileInput = input;
+        });
+
+        input.addEventListener("mouseleave", () => {
+            if (this.hoveredTileInput === input) {
+                this.hoveredTileInput = null;
+            }
+        });
+
         return input;
     }
 
@@ -232,10 +259,100 @@ class WordPlayHelper {
         const value = input.value.replace(/[^A-Za-z*!]/g, "");
         if (!value) {
             input.value = "";
+            this.clearTileUpgrade(input);
             return;
         }
 
         input.value = value[value.length - 1].toUpperCase();
+    }
+
+    initializeUpgradeMenu() {
+        const menu = document.createElement("div");
+        menu.id = "upgradeMenu";
+        menu.className = "upgrade-menu";
+        menu.style.display = "none";
+        menu.innerHTML = `
+            <button type="button" class="upgrade-menu-item" data-upgrade="none">None</button>
+            <button type="button" class="upgrade-menu-item" data-upgrade="emerald">Emerald</button>
+        `;
+        document.body.appendChild(menu);
+
+        menu.addEventListener("click", (e) => {
+            const button = e.target.closest("[data-upgrade]");
+            if (!button) return;
+
+            const input = this.getUpgradeMenuTarget();
+            if (input) {
+                this.setTileUpgrade(input, button.dataset.upgrade);
+            }
+            this.closeUpgradeMenu();
+        });
+    }
+
+    handleTileContextMenu(e) {
+        if (!e.target.value) {
+            this.closeUpgradeMenu();
+            return;
+        }
+
+        e.preventDefault();
+        this.openUpgradeMenu(e.target, e.clientX, e.clientY);
+    }
+
+    openUpgradeMenu(input, x, y) {
+        const menu = document.getElementById("upgradeMenu");
+        menu.dataset.targetIndex = input.dataset.index;
+
+        menu.querySelectorAll("[data-upgrade]").forEach((button) => {
+            button.classList.toggle(
+                "selected",
+                button.dataset.upgrade === this.getTileUpgrade(input)
+            );
+        });
+
+        menu.style.display = "block";
+
+        const menuRect = menu.getBoundingClientRect();
+        const left = Math.min(x, window.innerWidth - menuRect.width - 8);
+        const top = Math.min(y, window.innerHeight - menuRect.height - 8);
+
+        menu.style.left = `${Math.max(8, left)}px`;
+        menu.style.top = `${Math.max(8, top)}px`;
+    }
+
+    closeUpgradeMenu() {
+        const menu = document.getElementById("upgradeMenu");
+        if (menu) {
+            menu.style.display = "none";
+            delete menu.dataset.targetIndex;
+        }
+    }
+
+    getUpgradeMenuTarget() {
+        const menu = document.getElementById("upgradeMenu");
+        if (!menu || !menu.dataset.targetIndex) return null;
+
+        return document.querySelector(
+            `[data-index="${menu.dataset.targetIndex}"]`
+        );
+    }
+
+    getTileUpgrade(input) {
+        return input.dataset.upgrade || "none";
+    }
+
+    setTileUpgrade(input, upgrade) {
+        if (upgrade === "none") {
+            delete input.dataset.upgrade;
+        } else {
+            input.dataset.upgrade = upgrade;
+        }
+        this.updateInputTileClass(input);
+    }
+
+    clearTileUpgrade(input) {
+        delete input.dataset.upgrade;
+        this.updateInputTileClass(input);
     }
 
     updateExtraSlots() {
@@ -380,12 +497,14 @@ class WordPlayHelper {
                 e.preventDefault();
                 e.target.value = "";
                 delete e.target.dataset.tileInput;
+                this.clearTileUpgrade(e.target);
                 this.updateInputTileClass(e.target);
                 return;
             case "Backspace":
                 e.preventDefault(); // Prevent default browser action
                 e.target.value = ""; // Clear the current input's value
                 delete e.target.dataset.tileInput;
+                this.clearTileUpgrade(e.target);
                 this.updateInputTileClass(e.target);
 
                 if (index > 0) {
@@ -469,14 +588,77 @@ class WordPlayHelper {
     }
 
     handleGlobalKeyDown(event) {
+        if (this.handleHoveredTileUpgradeKey(event)) {
+            return;
+        }
+
         // Handle Escape key to clear the grid
         if (event.key === "Escape") {
+            if (document.getElementById("upgradeMenu")?.style.display === "block") {
+                this.closeUpgradeMenu();
+                return;
+            }
             // Prevent clearing if user is typing in a filter input
             if (event.target.classList.contains("filter-input")) {
                 return;
             }
             this.clearGrid();
         }
+    }
+
+    handleHoveredTileUpgradeKey(event) {
+        if (
+            event.ctrlKey ||
+            event.altKey ||
+            event.metaKey ||
+            document.getElementById("upgradeMenu")?.style.display === "block"
+        ) {
+            return false;
+        }
+
+        const activeElement = document.activeElement;
+        if (activeElement?.classList?.contains("letter-input")) {
+            return false;
+        }
+        if (
+            activeElement &&
+            ["INPUT", "TEXTAREA", "SELECT"].includes(activeElement.tagName)
+        ) {
+            return false;
+        }
+
+        const upgradeByKey = {
+            N: "none",
+            E: "emerald",
+        };
+        const upgrade = upgradeByKey[event.key.toUpperCase()];
+        const input = this.getHoveredUpgradeInput();
+        if (!upgrade || !input?.value) {
+            return false;
+        }
+
+        event.preventDefault();
+        this.setTileUpgrade(input, upgrade);
+        return true;
+    }
+
+    getHoveredUpgradeInput() {
+        if (this.hoveredTileInput?.isConnected) {
+            return this.hoveredTileInput;
+        }
+
+        const cssHoveredInput = document.querySelector(".letter-input:hover");
+        if (cssHoveredInput) {
+            return cssHoveredInput;
+        }
+
+        if (!this.pointerPosition) {
+            return null;
+        }
+
+        return document
+            .elementFromPoint(this.pointerPosition.x, this.pointerPosition.y)
+            ?.closest?.(".letter-input");
     }
 
     attachEventListeners() {
@@ -501,6 +683,19 @@ class WordPlayHelper {
                     this.closeSettingsPanel();
                 }
             });
+
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest("#upgradeMenu")) {
+                this.closeUpgradeMenu();
+            }
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            this.pointerPosition = {
+                x: e.clientX,
+                y: e.clientY,
+            };
+        });
 
         // Theme radio buttons
         document
@@ -637,30 +832,42 @@ class WordPlayHelper {
             Boolean(tileInput && this.multiLetterTiles[tileInput]) ||
             Object.values(this.multiLetterTiles).includes(value);
         const isSuffixTile = value === "!";
+        const upgrade = this.getTileUpgrade(input);
 
         input.classList.toggle(
             "multi-letter-input",
             isMultiLetterTile
         );
         input.classList.toggle("suffix-input", isSuffixTile);
-        input.title = isSuffixTile
+        input.classList.toggle("emerald-input", upgrade === "emerald");
+
+        const tileTitle = isSuffixTile
             ? "! tile appends to the end of every word"
             : isMultiLetterTile
             ? `${tileInput || value} tile counts as ${value}`
             : "";
+        const upgradeTitle =
+            upgrade === "emerald" ? "Emerald: expected 2x tile score" : "";
+        input.title = [tileTitle, upgradeTitle].filter(Boolean).join(" | ");
+    }
+
+    getTileScore(baseScore, upgrade) {
+        return baseScore * this.tileUpgrades[upgrade].scoreMultiplier;
     }
 
     createTile(input, index) {
         const value = input.value.toUpperCase();
         if (!value) return null;
+        const upgrade = this.getTileUpgrade(input);
 
         if (value === "!") {
             return {
                 input: value,
                 text: value,
                 letters: [],
-                score: 0,
+                score: this.getTileScore(0, upgrade),
                 index,
+                upgrade,
                 isWildcard: false,
                 isMultiLetter: false,
                 isSuffix: true,
@@ -678,8 +885,12 @@ class WordPlayHelper {
                 input: specialTileInput,
                 text: tileText,
                 letters: [...tileText],
-                score: this.letterScores[specialTileInput] || 0,
+                score: this.getTileScore(
+                    this.letterScores[specialTileInput] || 0,
+                    upgrade
+                ),
                 index,
+                upgrade,
                 isWildcard: false,
                 isMultiLetter: true,
                 isSuffix: false,
@@ -691,8 +902,9 @@ class WordPlayHelper {
                 input: value,
                 text: value,
                 letters: [],
-                score: 0,
+                score: this.getTileScore(0, upgrade),
                 index,
+                upgrade,
                 isWildcard: true,
                 isMultiLetter: false,
                 isSuffix: false,
@@ -703,8 +915,9 @@ class WordPlayHelper {
             input: value,
             text: value,
             letters: [value],
-            score: this.letterScores[value] || 0,
+            score: this.getTileScore(this.letterScores[value] || 0, upgrade),
             index,
+            upgrade,
             isWildcard: false,
             isMultiLetter: false,
             isSuffix: false,
@@ -723,6 +936,7 @@ class WordPlayHelper {
         inputs.forEach((input) => {
             input.value = "";
             delete input.dataset.tileInput;
+            delete input.dataset.upgrade;
             this.updateInputTileClass(input);
         });
 

@@ -633,6 +633,52 @@ main {
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
 }
 
+.letter-input.emerald-input {
+    background-color: #047857;
+    border-color: #065f46;
+    color: white;
+}
+
+.letter-input.emerald-input:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.28);
+}
+
+.upgrade-menu {
+    position: fixed;
+    z-index: 1100;
+    min-width: 140px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+
+.upgrade-menu-item {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.upgrade-menu-item:hover,
+.upgrade-menu-item.selected {
+    background: var(--background);
+}
+
+.upgrade-menu-item[data-upgrade="emerald"].selected,
+.upgrade-menu-item[data-upgrade="emerald"]:hover {
+    background: rgba(16, 185, 129, 0.14);
+    color: var(--text-primary);
+}
+
 /* Extra slots control */
 .extra-slots-control {
     display: flex;
