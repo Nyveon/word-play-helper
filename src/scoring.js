@@ -157,6 +157,7 @@ function getModifierHelpers() {
         getAdjacentSharedLetterScoreBonus,
         hasAdjacentVowels,
         hasLetterPair,
+        hasMatchingFirstAndLastLetter,
         isVowelTile,
         getContainedNumberWord,
     };
@@ -212,6 +213,10 @@ function hasLetterPair(word) {
         }
     }
     return false;
+}
+
+function hasMatchingFirstAndLastLetter(word) {
+    return word.length > 0 && word[0] === word[word.length - 1];
 }
 
 function isVowelTile(segment) {

@@ -3,6 +3,7 @@ import {
     GAME_MODIFIERS,
     INTERACTIVE_ELEMENTS,
     LETTER_SCORES,
+    MULTI_LETTER_TILE_SCORES,
     MULTI_LETTER_TILES,
     TILE_UPGRADES,
 } from "./src/config.js";
@@ -27,6 +28,7 @@ class WordPlayHelper {
         this.pointerPosition = null;
         this.achievementWords = new Set(ACHIEVEMENT_WORDS);
         this.multiLetterTiles = MULTI_LETTER_TILES;
+        this.multiLetterTileScores = MULTI_LETTER_TILE_SCORES;
         this.tileUpgrades = TILE_UPGRADES;
         this.gameModifiers = GAME_MODIFIERS;
         this.letterScores = LETTER_SCORES;
@@ -66,8 +68,6 @@ class WordPlayHelper {
     initializeSettings() {
         // Load settings from localStorage with defaults (all disabled/false)
         const defaultSettings = {
-            showTileScore: false,
-            showPositionScore: false,
             showCombinedScore: false,
             showScoreBreakdown: false,
         };
@@ -85,19 +85,11 @@ class WordPlayHelper {
     applySettings() {
         // Remove all hide classes first
         document.body.classList.remove(
-            "hide-tile-score",
-            "hide-position-score",
             "hide-combined-score",
             "hide-score-breakdown"
         );
 
         // Add hide classes based on settings
-        if (!this.settings.showTileScore) {
-            document.body.classList.add("hide-tile-score");
-        }
-        if (!this.settings.showPositionScore) {
-            document.body.classList.add("hide-position-score");
-        }
         if (!this.settings.showCombinedScore) {
             document.body.classList.add("hide-combined-score");
         }
@@ -108,10 +100,6 @@ class WordPlayHelper {
 
     updateSettingsUI() {
         // Update checkbox states to match current settings
-        document.getElementById("showTileScore").checked =
-            this.settings.showTileScore;
-        document.getElementById("showPositionScore").checked =
-            this.settings.showPositionScore;
         document.getElementById("showCombinedScore").checked =
             this.settings.showCombinedScore;
         document.getElementById("showScoreBreakdown").checked =
@@ -719,20 +707,6 @@ class WordPlayHelper {
 
         // Settings checkboxes
         document
-            .getElementById("showTileScore")
-            .addEventListener("change", (e) => {
-                this.settings.showTileScore = e.target.checked;
-                this.saveSettings();
-            });
-
-        document
-            .getElementById("showPositionScore")
-            .addEventListener("change", (e) => {
-                this.settings.showPositionScore = e.target.checked;
-                this.saveSettings();
-            });
-
-        document
             .getElementById("showCombinedScore")
             .addEventListener("change", (e) => {
                 this.settings.showCombinedScore = e.target.checked;
@@ -947,7 +921,10 @@ class WordPlayHelper {
                 text: tileText,
                 letters: [...tileText],
                 score: this.getTileScore(
-                    this.letterScores[specialTileInput] || 0,
+                    this.getMultiLetterTileBaseScore(
+                        specialTileInput,
+                        tileText
+                    ),
                     upgrade
                 ),
                 index,
@@ -983,6 +960,17 @@ class WordPlayHelper {
             isMultiLetter: false,
             isSuffix: false,
         };
+    }
+
+    getMultiLetterTileBaseScore(tileInput, tileText) {
+        if (this.multiLetterTileScores[tileInput] !== undefined) {
+            return this.multiLetterTileScores[tileInput];
+        }
+
+        return [...tileText].reduce(
+            (score, letter) => score + (this.letterScores[letter] || 0),
+            0
+        );
     }
 
     getGridTiles() {

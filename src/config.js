@@ -6,6 +6,11 @@ export const MULTI_LETTER_TILES = {
     Q: "QU",
 };
 
+export const MULTI_LETTER_TILE_SCORES = {
+    E: 8,
+    Q: 10,
+};
+
 export const TILE_UPGRADES = {
     none: {
         label: "None",
@@ -92,6 +97,15 @@ export const GAME_MODIFIERS = {
             };
         },
     },
+    noE: {
+        label: "No E",
+        type: "scoring",
+        color: "cyan",
+        apply: ({ baseWord }) =>
+            !baseWord.includes("E")
+                ? { generalMultiplier: 2, scoringLabel: "No E" }
+                : {},
+    },
     hoot: {
         label: "HOOT",
         type: "interest",
@@ -122,6 +136,15 @@ export const GAME_MODIFIERS = {
         apply: ({ helpers, baseWord }) =>
             helpers.hasAdjacentVowels(baseWord)
                 ? { generalMultiplier: 1.5, scoringLabel: "NOUN" }
+                : {},
+    },
+    kick: {
+        label: "KICK",
+        type: "scoring",
+        color: "cyan",
+        apply: ({ helpers, baseWord }) =>
+            helpers.hasMatchingFirstAndLastLetter(baseWord)
+                ? { generalMultiplier: 2, scoringLabel: "KICK" }
                 : {},
     },
     each: {

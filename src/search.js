@@ -203,7 +203,7 @@ export function createWordResult({
         0
     );
     const wordScore = result.score + suffixScore;
-    const positionScore = getPositionScore(word.length);
+    const positionScore = getPositionScore(segments.length);
     const scoreBreakdown = calculateScoreBreakdown({
         activeGameModifiers,
         baseWord,

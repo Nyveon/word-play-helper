@@ -655,15 +655,8 @@ main {
 }
 
 .letter-input.multi-letter-input {
-    border-color: var(--success);
-    background-color: rgba(16, 185, 129, 0.12);
     font-size: 1.1rem;
     letter-spacing: 0;
-}
-
-.letter-input.multi-letter-input:focus {
-    border-color: var(--success);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
 }
 
 .letter-input.suffix-input {
@@ -1177,22 +1170,11 @@ main {
     display: inline;
 }
 
-.word:hover .word-score-combined {
-    display: none;
-}
-
-.word .word-score-position {
-    display: none;
-}
-
-.word:hover .word-score-position {
-    display: inline;
-}
-
 .score-breakdown {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 3px;
+    grid-template-columns: repeat(4, max-content);
+    gap: 4px;
+    justify-content: center;
     margin-top: 6px;
     font-size: 0.68rem;
     font-weight: 800;
@@ -1200,12 +1182,10 @@ main {
 }
 
 .score-breakdown-item {
-    min-width: 0;
-    overflow: hidden;
-    padding: 2px 3px;
+    min-width: 24px;
+    padding: 2px 4px;
     border-radius: 4px;
     color: white;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -1245,26 +1225,12 @@ main {
     color: #0891b2;
 }
 
-/* Settings-based visibility */
-body.hide-tile-score .word-score-tile {
-    display: none !important;
-}
-
-body.hide-position-score .word-score-position {
-    display: none !important;
-}
-
 body.hide-combined-score .word-score-combined {
     display: none !important;
 }
 
 body.hide-score-breakdown .score-breakdown {
     display: none !important;
-}
-
-/* If position score is disabled, keep combined score visible on hover */
-body.hide-position-score .word:hover .word-score-combined {
-    display: inline !important;
 }
 
 .wildcard-letter {
@@ -1274,18 +1240,7 @@ body.hide-position-score .word:hover .word-score-combined {
 }
 
 .multi-letter-tile {
-    display: inline-block;
-    padding: 0 4px;
-    border-radius: 4px;
-    background: rgba(16, 185, 129, 0.16);
-    color: var(--success);
     font-weight: 700;
-}
-
-.word:hover .multi-letter-tile,
-.word.achievement-word:hover .multi-letter-tile {
-    background: white;
-    color: var(--success);
 }
 
 .suffix-letter {

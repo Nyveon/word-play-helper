@@ -9,7 +9,11 @@ export function renderScoreSortedResults(words) {
 
     return `
         <div class="words words-by-score">
-            ${sortedWords.map((wordObj) => createWordHtml(wordObj)).join("")}
+            ${sortedWords
+                .map((wordObj) =>
+                    createWordHtml(wordObj, { showHighScore: false })
+                )
+                .join("")}
         </div>
     `;
 }
@@ -37,19 +41,24 @@ export function renderLengthGroupedResults(words) {
                         <span class="word-count">${wordsForLength.length}</span>
                     </h3>
                     <div class="words" data-words-for="${length}" id="words-${length}">
-                        ${wordsForLength.map((wordObj) => createWordHtml(wordObj)).join("")}
+                        ${wordsForLength
+                            .map((wordObj) =>
+                                createWordHtml(wordObj, {
+                                    showHighScore: true,
+                                })
+                            )
+                            .join("")}
                     </div>
                 </div>`;
         })
         .join("");
 }
 
-export function createWordHtml(wordObj) {
+export function createWordHtml(wordObj, { showHighScore } = {}) {
     const {
         word,
         tileScore,
         bonusScore,
-        positionScore,
         combinedScore,
         goldMultiplier,
         generalMultiplier,
@@ -61,7 +70,7 @@ export function createWordHtml(wordObj) {
     const wordDisplay = createWordDisplay(word, segments);
 
     const classList = ["word"];
-    if (isHighScore) {
+    if (showHighScore && isHighScore) {
         classList.push("highlight-score");
     }
     if (isAchievementWord) {
@@ -73,7 +82,6 @@ export function createWordHtml(wordObj) {
 
     return `
         <div class="${classList.join(" ")}" alt="${combinedScore}">
-            <span class="word-score-tile">${tileScore}</span>
             <span class="word-text">${wordDisplay}</span>
             ${
                 isAchievementWord
@@ -81,7 +89,6 @@ export function createWordHtml(wordObj) {
                     : ""
             }
             ${createModifierBadges(interestModifiers)}
-            <span class="word-score-position">${positionScore}</span>
             <span class="word-score-combined">${combinedScore}</span>
             ${createScoreBreakdown({
                 bonusScore,
