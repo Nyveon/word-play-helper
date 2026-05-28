@@ -138,6 +138,21 @@ export const GAME_MODIFIERS = {
                 : {};
         },
     },
+    ammo: {
+        label: "AMMO",
+        type: "scoring",
+        color: "white",
+        apply: ({ helpers, segments }) => {
+            const wordScoreBonus =
+                helpers.getAdjacentSharedLetterScoreBonus(segments);
+            return wordScoreBonus > 0
+                ? {
+                      wordScoreBonus,
+                      scoringLabel: "AMMO",
+                  }
+                : {};
+        },
+    },
     done: {
         label: "DONE",
         type: "interest",

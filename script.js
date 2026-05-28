@@ -186,6 +186,7 @@ class WordPlayHelper {
 
             mainGrid.appendChild(input);
             mainGrid.appendChild(this.createUpgradeMarker(i));
+            mainGrid.appendChild(this.createTileScoreMarker(i));
         }
 
         gridContainer.appendChild(mainGrid);
@@ -235,6 +236,13 @@ class WordPlayHelper {
         marker.className = "tile-upgrade-marker";
         marker.dataset.index = index;
         marker.textContent = ".";
+        return marker;
+    }
+
+    createTileScoreMarker(index) {
+        const marker = document.createElement("span");
+        marker.className = "tile-score-marker";
+        marker.dataset.index = index;
         return marker;
     }
 
@@ -875,6 +883,8 @@ class WordPlayHelper {
             marker.classList.toggle("visible", upgrade === "dot");
         }
 
+        this.updateTileScoreMarker(input);
+
         const tileTitle = isSuffixTile
             ? "! tile appends to every word and scores unsubmitted tiles"
             : isMultiLetterTile
@@ -886,6 +896,24 @@ class WordPlayHelper {
 
     getTileScore(baseScore, upgrade) {
         return calculateTileScore(baseScore, upgrade, this.tileUpgrades);
+    }
+
+    updateTileScoreMarker(input) {
+        const marker = document.querySelector(
+            `.tile-score-marker[data-index="${input.dataset.index}"]`
+        );
+        if (!marker) return;
+
+        const tile = this.createTile(input, Number(input.dataset.index));
+        marker.textContent = tile
+            ? tile.isSuffix
+                ? "?"
+                : tile.score
+            : "";
+        marker.title = tile?.isSuffix
+            ? "! scores based on unsubmitted tiles for each result"
+            : "Tile score";
+        marker.classList.toggle("visible", Boolean(tile));
     }
 
     createTile(input, index) {

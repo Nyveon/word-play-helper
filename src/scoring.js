@@ -154,6 +154,7 @@ function getModifierHelpers() {
     return {
         countDistinctVowels,
         countLetters,
+        getAdjacentSharedLetterScoreBonus,
         hasAdjacentVowels,
         hasLetterPair,
         isVowelTile,
@@ -173,6 +174,26 @@ function countDistinctVowels(word) {
 
 function countLetters(word, letter) {
     return [...word].filter((char) => char === letter).length;
+}
+
+function getAdjacentSharedLetterScoreBonus(segments) {
+    const boostedTileIndexes = new Set();
+
+    for (let i = 1; i < segments.length; i++) {
+        const previousSegment = segments[i - 1];
+        const currentSegment = segments[i];
+        if (segmentsShareLetter(previousSegment, currentSegment)) {
+            boostedTileIndexes.add(previousSegment.tileIndex);
+            boostedTileIndexes.add(currentSegment.tileIndex);
+        }
+    }
+
+    return [...boostedTileIndexes].reduce((bonus, tileIndex) => {
+        const segment = segments.find(
+            (candidate) => candidate.tileIndex === tileIndex
+        );
+        return bonus + (segment?.score ?? 0) * 2;
+    }, 0);
 }
 
 function hasAdjacentVowels(word) {
@@ -195,6 +216,17 @@ function hasLetterPair(word) {
 
 function isVowelTile(segment) {
     return Boolean(segment && segment.type !== "wildcard" && isVowel(segment.text[0]));
+}
+
+function segmentsShareLetter(firstSegment, secondSegment) {
+    const firstLetters = getSegmentLetters(firstSegment);
+    const secondLetters = getSegmentLetters(secondSegment);
+    return firstLetters.some((letter) => secondLetters.includes(letter));
+}
+
+function getSegmentLetters(segment) {
+    if (!segment) return [];
+    return [...segment.text].filter((letter) => /[A-Z]/.test(letter));
 }
 
 function isVowel(letter) {
