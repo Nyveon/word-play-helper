@@ -1,3 +1,18 @@
+import {
+    ACHIEVEMENT_WORDS,
+    GAME_MODIFIERS,
+    INTERACTIVE_ELEMENTS,
+    LETTER_SCORES,
+    MULTI_LETTER_TILES,
+    TILE_UPGRADES,
+} from "./src/config.js";
+import { findWordResults } from "./src/search.js";
+import { getTileScore as calculateTileScore } from "./src/scoring.js";
+import {
+    renderLengthGroupedResults,
+    renderScoreSortedResults,
+} from "./src/rendering.js";
+
 class WordPlayHelper {
     constructor() {
         this.wordList = [];
@@ -10,110 +25,18 @@ class WordPlayHelper {
         this.extraSlots = 0; // Track number of extra slots
         this.hoveredTileInput = null;
         this.pointerPosition = null;
-        this.achievementWords = new Set(["WORDPLAY", "MAGNET"]);
-        this.multiLetterTiles = {
-            I: "ING",
-            E: "ERS",
-            Q: "QU",
-        };
-        this.tileUpgrades = {
-            none: {
-                label: "None",
-                scoreMultiplier: 1,
-            },
-            emerald: {
-                label: "Emerald",
-                scoreMultiplier: 2,
-            },
-            dot: {
-                label: "Dot",
-                scoreMultiplier: 1,
-            },
-            gold: {
-                label: "Gold",
-                scoreMultiplier: 1,
-            },
-        };
-        this.gameModifiers = {
-            none: {
-                label: "None",
-                type: "none",
-                color: "none",
-            },
-            idea: {
-                label: "IDEA",
-                type: "scoring",
-                color: "cyan",
-            },
-            r: {
-                label: "R",
-                type: "scoring",
-                color: "cyan",
-            },
-            e: {
-                label: "E",
-                type: "scoring",
-                color: "cyan",
-            },
-            hoot: {
-                label: "HOOT",
-                type: "interest",
-                color: "orange",
-            },
-            moss: {
-                label: "MOSS",
-                type: "scoring",
-                color: "cyan",
-            },
-            done: {
-                label: "DONE",
-                type: "interest",
-                color: "orange",
-            },
-        };
-        this.letterScores = {
-            A: 1,
-            B: 3,
-            C: 3,
-            D: 2,
-            E: 1,
-            F: 4,
-            G: 2,
-            H: 4,
-            I: 1,
-            J: 8,
-            K: 5,
-            L: 1,
-            M: 3,
-            N: 1,
-            O: 1,
-            P: 3,
-            Q: 10,
-            R: 1,
-            S: 1,
-            T: 1,
-            U: 1,
-            V: 4,
-            W: 4,
-            X: 8,
-            Y: 4,
-            Z: 10,
-        };
-
-        // List of interactive elements to prevent focus hijacking
-        this.interactiveElements = [
-            "INPUT",
-            "BUTTON",
-            "A",
-            "SELECT",
-            "LABEL",
-            "OPTION",
-        ];
+        this.achievementWords = new Set(ACHIEVEMENT_WORDS);
+        this.multiLetterTiles = MULTI_LETTER_TILES;
+        this.tileUpgrades = TILE_UPGRADES;
+        this.gameModifiers = GAME_MODIFIERS;
+        this.letterScores = LETTER_SCORES;
+        this.interactiveElements = INTERACTIVE_ELEMENTS;
 
         this.initializeTheme();
         this.initializeSettings();
         this.initializeGrid();
         this.initializeUpgradeMenu();
+        this.initializeGameModifierSlots();
         this.attachEventListeners();
         this.updateGameModifiers();
         this.loadWordList();
@@ -328,12 +251,12 @@ class WordPlayHelper {
         menu.id = "upgradeMenu";
         menu.className = "upgrade-menu";
         menu.style.display = "none";
-        menu.innerHTML = `
-            <button type="button" class="upgrade-menu-item" data-upgrade="none">None</button>
-            <button type="button" class="upgrade-menu-item" data-upgrade="emerald">Emerald</button>
-            <button type="button" class="upgrade-menu-item" data-upgrade="dot">Dot</button>
-            <button type="button" class="upgrade-menu-item" data-upgrade="gold">Gold</button>
-        `;
+        menu.innerHTML = Object.entries(this.tileUpgrades)
+            .map(
+                ([id, upgrade]) =>
+                    `<button type="button" class="upgrade-menu-item" data-upgrade="${id}">${upgrade.label}</button>`
+            )
+            .join("");
         document.body.appendChild(menu);
 
         menu.addEventListener("click", (e) => {
@@ -397,10 +320,15 @@ class WordPlayHelper {
     }
 
     getTileUpgrade(input) {
-        return input.dataset.upgrade || "none";
+        return this.tileUpgrades[input.dataset.upgrade]
+            ? input.dataset.upgrade
+            : "none";
     }
 
     setTileUpgrade(input, upgrade) {
+        if (!this.tileUpgrades[upgrade]) {
+            upgrade = "none";
+        }
         if (upgrade === "none") {
             delete input.dataset.upgrade;
         } else {
@@ -686,12 +614,11 @@ class WordPlayHelper {
             return false;
         }
 
-        const upgradeByKey = {
-            N: "none",
-            E: "emerald",
-            D: "dot",
-            G: "gold",
-        };
+        const upgradeByKey = Object.fromEntries(
+            Object.entries(this.tileUpgrades)
+                .filter(([, upgrade]) => upgrade.key)
+                .map(([id, upgrade]) => [upgrade.key, id])
+        );
         const upgrade = upgradeByKey[event.key.toUpperCase()];
         const input = this.getHoveredUpgradeInput();
         if (!upgrade || !input?.value) {
@@ -919,9 +846,14 @@ class WordPlayHelper {
             isMultiLetterTile
         );
         input.classList.toggle("suffix-input", isSuffixTile);
-        input.classList.toggle("emerald-input", upgrade === "emerald");
-        input.classList.toggle("dot-input", upgrade === "dot");
-        input.classList.toggle("gold-input", upgrade === "gold");
+        Object.values(this.tileUpgrades).forEach((tileUpgrade) => {
+            if (tileUpgrade.className) {
+                input.classList.toggle(
+                    tileUpgrade.className,
+                    tileUpgrade.className === this.tileUpgrades[upgrade].className
+                );
+            }
+        });
         const marker = document.querySelector(
             `.tile-upgrade-marker[data-index="${input.dataset.index}"]`
         );
@@ -934,19 +866,12 @@ class WordPlayHelper {
             : isMultiLetterTile
             ? `${tileInput || value} tile counts as ${value}`
             : "";
-        const upgradeTitle =
-            upgrade === "emerald"
-                ? "Emerald: expected 2x tile score"
-                : upgrade === "dot"
-                ? "Dot: doubles the word score when this is the last tile"
-                : upgrade === "gold"
-                ? "Gold: multiplies word score by the number of Gold tiles used"
-                : "";
+        const upgradeTitle = this.tileUpgrades[upgrade].title();
         input.title = [tileTitle, upgradeTitle].filter(Boolean).join(" | ");
     }
 
     getTileScore(baseScore, upgrade) {
-        return baseScore * this.tileUpgrades[upgrade].scoreMultiplier;
+        return calculateTileScore(baseScore, upgrade, this.tileUpgrades);
     }
 
     createTile(input, index) {
@@ -1101,198 +1026,6 @@ class WordPlayHelper {
         wordList.innerHTML = `<p class="placeholder" style="color: var(--error);">${message}</p>`;
     }
 
-    passesLetterCountFilter(word, availableTiles) {
-        const letterCount = {};
-        let wildcardCount = 0;
-
-        // Count expanded tile letters and one-character wildcards separately.
-        for (const tile of availableTiles) {
-            if (tile.isSuffix) {
-                continue;
-            } else if (tile.isWildcard) {
-                wildcardCount++;
-            } else {
-                for (const letter of tile.letters) {
-                    letterCount[letter] = (letterCount[letter] || 0) + 1;
-                }
-            }
-        }
-
-        for (let i = 0; i < word.length; i++) {
-            const letter = word[i];
-            if (letterCount[letter] > 0) {
-                letterCount[letter]--;
-            } else if (wildcardCount > 0) {
-                wildcardCount--;
-            } else {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    canTileMatchAt(word, startIndex, tile) {
-        if (tile.isWildcard) {
-            return startIndex < word.length
-                ? {
-                      endIndex: startIndex + 1,
-                      segment: {
-                          text: word[startIndex],
-                          type: "wildcard",
-                          upgrade: tile.upgrade,
-                          tileIndex: tile.index,
-                      },
-                  }
-                : null;
-        }
-
-        if (word.startsWith(tile.text, startIndex)) {
-            return {
-                endIndex: startIndex + tile.text.length,
-                segment: {
-                    text: tile.text,
-                    type: tile.isMultiLetter ? "multi" : "normal",
-                    upgrade: tile.upgrade,
-                    tileIndex: tile.index,
-                },
-            };
-        }
-
-        return null;
-    }
-
-    canFormWord(word, availableTiles) {
-        if (!this.passesLetterCountFilter(word, availableTiles)) {
-            return false;
-        }
-
-        const tiles = availableTiles.filter((tile) => !tile.isSuffix).sort((a, b) => {
-            if (a.isWildcard !== b.isWildcard) {
-                return a.isWildcard ? 1 : -1;
-            }
-            return b.text.length - a.text.length;
-        });
-        const usedTiles = new Array(tiles.length).fill(false);
-
-        const search = (wordIndex, score, segments) => {
-            if (wordIndex === word.length) {
-                return { score, segments };
-            }
-
-            for (let i = 0; i < tiles.length; i++) {
-                if (usedTiles[i]) continue;
-
-                const match = this.canTileMatchAt(word, wordIndex, tiles[i]);
-                if (!match) continue;
-
-                usedTiles[i] = true;
-                const result = search(
-                    match.endIndex,
-                    score + tiles[i].score,
-                    [...segments, match.segment]
-                );
-                if (result) {
-                    return result;
-                }
-                usedTiles[i] = false;
-            }
-
-            return false;
-        };
-
-        return search(0, 0, []);
-    }
-
-    getSuffixTiles(tiles) {
-        return tiles.filter((tile) => tile.isSuffix);
-    }
-
-    createWordResult(baseWord, result, suffixTiles, allTiles, isAchievementWord) {
-        const suffixText = suffixTiles.map((tile) => tile.text).join("");
-        const word = `${baseWord}${suffixText}`;
-        const segments = [...result.segments];
-        suffixTiles.forEach((tile) => {
-            segments.push({
-                text: tile.text,
-                type: "suffix",
-                upgrade: tile.upgrade,
-                tileIndex: tile.index,
-            });
-        });
-
-        const submittedTileIndexes = new Set(
-            segments
-                .map((segment) => segment.tileIndex)
-                .filter((tileIndex) => tileIndex !== undefined)
-        );
-        const unsubmittedTileCount =
-            allTiles.length - submittedTileIndexes.size;
-        const suffixScore = suffixTiles.reduce(
-            (total, tile) =>
-                total + this.getTileScore(unsubmittedTileCount, tile.upgrade),
-            0
-        );
-        const tileScore = result.score + suffixScore;
-        const positionScore = this.getPositionScore(word.length);
-        const baseCombinedScore = tileScore + positionScore;
-        const scoreMultiplier = this.getWordScoreMultiplier(segments);
-        const upgradedScore = baseCombinedScore * scoreMultiplier;
-        const modifierResult = this.evaluateGameModifiers(
-            baseWord,
-            upgradedScore
-        );
-        const combinedScore = modifierResult.score;
-
-        return {
-            word,
-            baseWord,
-            tileScore,
-            positionScore,
-            combinedScore,
-            scoreMultiplier,
-            scoringModifiers: modifierResult.scoringModifiers,
-            interestModifiers: modifierResult.interestModifiers,
-            segments,
-            isAchievementWord,
-        };
-    }
-
-    getWordScoreMultiplier(segments) {
-        const lastSegment = segments[segments.length - 1];
-        const dotMultiplier = lastSegment?.upgrade === "dot" ? 2 : 1;
-        const goldCount = segments.filter(
-            (segment) => segment.upgrade === "gold"
-        ).length;
-        const goldMultiplier = goldCount > 0 ? goldCount : 1;
-        return dotMultiplier * goldMultiplier;
-    }
-
-    getPositionScore(length) {
-        let totalPositionScore = 0;
-        // Loop through each position in the word (1-indexed)
-        for (let i = 1; i <= length; i++) {
-            if (i >= 20) {
-                totalPositionScore += 50;
-            } else if (i === 19) {
-                totalPositionScore += 40;
-            } else if (i === 18) {
-                totalPositionScore += 30;
-            } else if (i >= 15) {
-                totalPositionScore += 25;
-            } else if (i >= 12) {
-                totalPositionScore += 20;
-            } else if (i >= 10) {
-                totalPositionScore += 15;
-            } else if (i >= 8) {
-                totalPositionScore += 10;
-            } else if (i >= 5) {
-                totalPositionScore += 5;
-            }
-        }
-        return totalPositionScore;
-    }
-
     applyFilters() {
         if (this.currentResults.length === 0) return;
 
@@ -1333,6 +1066,24 @@ class WordPlayHelper {
         }
     }
 
+    initializeGameModifierSlots() {
+        const slots = document.getElementById("gameModifierSlots");
+        const optionsHtml = Object.entries(this.gameModifiers)
+            .map(
+                ([id, modifier]) =>
+                    `<option value="${id}">${modifier.label}</option>`
+            )
+            .join("");
+
+        slots.innerHTML = Array.from({ length: 6 }, (_, index) => {
+            return `
+                <select class="game-modifier-select" data-modifier-slot="${index}">
+                    ${optionsHtml}
+                </select>
+            `;
+        }).join("");
+    }
+
     updateGameModifiers() {
         const selects = document.querySelectorAll(".game-modifier-select");
         this.activeGameModifiers = Array.from(selects).map((select) => {
@@ -1353,105 +1104,6 @@ class WordPlayHelper {
         return this.activeGameModifiers.filter(
             (modifier) => modifier !== "none"
         );
-    }
-
-    countDistinctVowels(word) {
-        const vowels = new Set();
-        for (const letter of word) {
-            if ("AEIOU".includes(letter)) {
-                vowels.add(letter);
-            }
-        }
-        return vowels.size;
-    }
-
-    countLetters(word, letter) {
-        return [...word].filter((char) => char === letter).length;
-    }
-
-    hasLetterPair(word) {
-        for (let i = 1; i < word.length; i++) {
-            if (word[i] === word[i - 1]) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    getContainedNumberWord(word) {
-        const numberWords = [
-            "ONE",
-            "TWO",
-            "THREE",
-            "FOUR",
-            "FIVE",
-            "SIX",
-            "SEVEN",
-            "EIGHT",
-            "NINE",
-            "TEN",
-            "ELEVEN",
-            "TWELVE",
-            "THIRTEEN",
-            "FOURTEEN",
-            "FIFTEEN",
-            "SIXTEEN",
-            "SEVENTEEN",
-            "EIGHTEEN",
-            "NINETEEN",
-            "TWENTY",
-        ];
-
-        return numberWords.find((numberWord) => word.includes(numberWord));
-    }
-
-    evaluateGameModifiers(baseWord, baseScore) {
-        let score = baseScore;
-        const scoringModifiers = [];
-        const interestModifiers = [];
-
-        this.getActiveGameModifiers().forEach((modifier) => {
-            if (modifier === "idea") {
-                if (this.countDistinctVowels(baseWord) >= 3) {
-                    score *= 2;
-                    scoringModifiers.push("IDEA");
-                }
-            } else if (modifier === "r") {
-                const rCount = this.countLetters(baseWord, "R");
-                score *= rCount ? rCount : 1;
-                scoringModifiers.push("R");
-            } else if (modifier === "e") {
-                const eCount = this.countLetters(baseWord, "E");
-                score *= eCount? eCount : 1;
-                scoringModifiers.push("E");
-            } else if (modifier === "hoot") {
-                if (this.hasLetterPair(baseWord)) {
-                    interestModifiers.push({
-                        label: "HOOT",
-                        color: "orange",
-                    });
-                }
-            } else if (modifier === "moss") {
-                if (this.hasLetterPair(baseWord)) {
-                    score *= 1.5
-                    scoringModifiers.push("MOSS");
-                }
-            } else if (modifier === "done") {
-                const numberWord = this.getContainedNumberWord(baseWord);
-                if (numberWord) {
-                    interestModifiers.push({
-                        label: `DONE: ${numberWord}`,
-                        color: "orange",
-                    });
-                }
-            }
-        });
-
-        return {
-            score,
-            scoringModifiers,
-            interestModifiers,
-        };
     }
 
     setResultViewMode(viewMode) {
@@ -1479,137 +1131,12 @@ class WordPlayHelper {
         }
 
         if (this.resultViewMode === "score") {
-            this.displayScoreSortedResults(words);
+            wordList.innerHTML = renderScoreSortedResults(words);
             return;
         }
 
-        this.displayLengthGroupedResults(words);
-    }
-
-    displayScoreSortedResults(words) {
-        const wordList = document.getElementById("wordList");
-        const sortedWords = [...words].sort((a, b) => {
-            const scoreDiff = b.combinedScore - a.combinedScore;
-            if (scoreDiff !== 0) return scoreDiff;
-            const lengthDiff = b.word.length - a.word.length;
-            if (lengthDiff !== 0) return lengthDiff;
-            return a.word.localeCompare(b.word);
-        });
-
-        wordList.innerHTML = `
-            <div class="words words-by-score">
-                ${sortedWords.map((wordObj) => this.createWordHtml(wordObj)).join("")}
-            </div>
-        `;
-    }
-
-    displayLengthGroupedResults(words) {
-        const wordList = document.getElementById("wordList");
-        const wordsByLength = words.reduce((acc, wordObj) => {
-            const length = wordObj.word.length;
-            if (!acc[length]) acc[length] = [];
-            acc[length].push(wordObj);
-            return acc;
-        }, {});
-
-        const lengths = Object.keys(wordsByLength)
-            .map(Number)
-            .sort((a, b) => b - a);
-        let html = "";
-
-        lengths.forEach((length) => {
-            const wordsForLength = wordsByLength[length];
-            html += `
-                <div class="word-group">
-                    <h3 class="word-group-header" data-length="${length}" role="button" tabindex="0" aria-expanded="true" aria-controls="words-${length}">
-                        <span class="collapse-icon">▼</span>
-                        ${length} letters
-                        <span class="word-count">${wordsForLength.length}</span>
-                    </h3>
-                    <div class="words" data-words-for="${length}" id="words-${length}">
-                        ${wordsForLength
-                            .map((wordObj) => this.createWordHtml(wordObj))
-                            .join("")}
-                    </div>
-                </div>`;
-        });
-
-        wordList.innerHTML = html;
+        wordList.innerHTML = renderLengthGroupedResults(words);
         this.attachCollapseHandlers();
-    }
-
-    createWordHtml(wordObj) {
-        const {
-            word,
-            tileScore,
-            positionScore,
-            combinedScore,
-            segments,
-            isHighScore,
-            isAchievementWord,
-            interestModifiers,
-        } = wordObj;
-        const wordDisplay = this.createWordDisplay(word, segments);
-
-        const classList = ["word"];
-        if (isHighScore) {
-            classList.push("highlight-score");
-        }
-        if (isAchievementWord) {
-            classList.push("achievement-word");
-        }
-        if (interestModifiers && interestModifiers.length > 0) {
-            classList.push("modifier-interest-word");
-        }
-
-        return `
-            <div class="${classList.join(" ")}" alt="${combinedScore}">
-                <span class="word-score-tile">${tileScore}</span>
-                <span class="word-text">${wordDisplay}</span>
-                ${
-                    isAchievementWord
-                        ? '<span class="achievement-badge">Achievement</span>'
-                        : ""
-                }
-                ${this.createModifierBadges(interestModifiers)}
-                <span class="word-score-position">${positionScore}</span>
-                <span class="word-score-combined">${combinedScore}</span>
-            </div>
-        `;
-    }
-
-    createModifierBadges(interestModifiers) {
-        if (!interestModifiers || interestModifiers.length === 0) {
-            return "";
-        }
-
-        return interestModifiers
-            .map(
-                (modifier) =>
-                    `<span class="modifier-badge modifier-badge-${modifier.color}">${modifier.label}</span>`
-            )
-            .join("");
-    }
-
-    createWordDisplay(word, segments) {
-        if (!segments || segments.length === 0) {
-            return word;
-        }
-
-        return segments
-            .map((segment) => {
-                if (segment.type === "wildcard") {
-                    return `<span class="wildcard-letter">${segment.text}</span>`;
-                }
-                if (segment.type === "multi") {
-                    return `<span class="multi-letter-tile">${segment.text}</span>`;
-                }
-                if (segment.type === "suffix") {
-                    return `<span class="suffix-letter">${segment.text}</span>`;
-                }
-                return segment.text;
-            })
-            .join("");
     }
 
     attachCollapseHandlers() {
@@ -1668,71 +1195,14 @@ class WordPlayHelper {
 
         setTimeout(() => {
             try {
-                const foundWords = [];
-                const suffixTiles = this.getSuffixTiles(tiles);
-                this.wordList.forEach((word) => {
-                    if (word.length >= 4) {
-                        const result = this.canFormWord(word, tiles);
-                        if (result) {
-                            foundWords.push(
-                                this.createWordResult(
-                                    word,
-                                    result,
-                                    suffixTiles,
-                                    tiles,
-                                    this.achievementWords.has(word)
-                                )
-                            );
-                        }
-                    }
+                const foundWords = findWordResults({
+                    achievementWords: this.achievementWords,
+                    activeGameModifiers: this.activeGameModifiers,
+                    gameModifiers: this.gameModifiers,
+                    tiles,
+                    tileUpgrades: this.tileUpgrades,
+                    wordList: this.wordList,
                 });
-
-                this.achievementWords.forEach((word) => {
-                    if (foundWords.some((wordObj) => wordObj.baseWord === word)) {
-                        return;
-                    }
-
-                    const result = this.canFormWord(word, tiles);
-                    if (result) {
-                        foundWords.push(
-                            this.createWordResult(
-                                word,
-                                result,
-                                suffixTiles,
-                                tiles,
-                                true
-                            )
-                        );
-                    }
-                });
-
-                // Sort by length (desc), combined score (desc), then alphabetically
-                foundWords.sort((a, b) => {
-                    const lengthDiff = b.word.length - a.word.length;
-                    if (lengthDiff !== 0) return lengthDiff;
-                    const scoreDiff = b.combinedScore - a.combinedScore;
-                    if (scoreDiff !== 0) return scoreDiff;
-                    return a.word.localeCompare(b.word);
-                });
-
-                // Add high score highlighting based on combined score
-                if (foundWords.length > 0) {
-                    const maxLength = foundWords[0].word.length;
-                    const maxScoreAtMaxLength = Math.max(
-                        ...foundWords
-                            .filter((w) => w.word.length === maxLength)
-                            .map((w) => w.combinedScore)
-                    );
-                    foundWords.forEach((w) => {
-                        if (
-                            w.word.length < maxLength &&
-                            w.combinedScore > maxScoreAtMaxLength
-                        ) {
-                            w.isHighScore = true;
-                        }
-                    });
-                }
-
                 this.displayResults(foundWords, tiles);
                 this.hideLoading();
             } catch (error) {
