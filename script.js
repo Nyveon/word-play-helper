@@ -50,10 +50,20 @@ class WordPlayHelper {
                 type: "scoring",
                 color: "cyan",
             },
+            e: {
+                label: "E",
+                type: "scoring",
+                color: "cyan",
+            },
             hoot: {
                 label: "HOOT",
                 type: "interest",
                 color: "orange",
+            },
+            moss: {
+                label: "MOSS",
+                type: "scoring",
+                color: "cyan",
             },
             done: {
                 label: "DONE",
@@ -1408,14 +1418,23 @@ class WordPlayHelper {
                 }
             } else if (modifier === "r") {
                 const rCount = this.countLetters(baseWord, "R");
-                score *= rCount;
+                score *= rCount ? rCount : 1;
                 scoringModifiers.push("R");
+            } else if (modifier === "e") {
+                const eCount = this.countLetters(baseWord, "E");
+                score *= eCount? eCount : 1;
+                scoringModifiers.push("E");
             } else if (modifier === "hoot") {
                 if (this.hasLetterPair(baseWord)) {
                     interestModifiers.push({
                         label: "HOOT",
                         color: "orange",
                     });
+                }
+            } else if (modifier === "moss") {
+                if (this.hasLetterPair(baseWord)) {
+                    score *= 1.5
+                    scoringModifiers.push("MOSS");
                 }
             } else if (modifier === "done") {
                 const numberWord = this.getContainedNumberWord(baseWord);
