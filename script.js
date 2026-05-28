@@ -69,11 +69,12 @@ class WordPlayHelper {
             showTileScore: false,
             showPositionScore: false,
             showCombinedScore: false,
+            showScoreBreakdown: false,
         };
 
         const savedSettings = localStorage.getItem("scoreSettings");
         this.settings = savedSettings
-            ? JSON.parse(savedSettings)
+            ? { ...defaultSettings, ...JSON.parse(savedSettings) }
             : defaultSettings;
 
         // Apply settings to UI
@@ -86,7 +87,8 @@ class WordPlayHelper {
         document.body.classList.remove(
             "hide-tile-score",
             "hide-position-score",
-            "hide-combined-score"
+            "hide-combined-score",
+            "hide-score-breakdown"
         );
 
         // Add hide classes based on settings
@@ -99,6 +101,9 @@ class WordPlayHelper {
         if (!this.settings.showCombinedScore) {
             document.body.classList.add("hide-combined-score");
         }
+        if (!this.settings.showScoreBreakdown) {
+            document.body.classList.add("hide-score-breakdown");
+        }
     }
 
     updateSettingsUI() {
@@ -109,6 +114,8 @@ class WordPlayHelper {
             this.settings.showPositionScore;
         document.getElementById("showCombinedScore").checked =
             this.settings.showCombinedScore;
+        document.getElementById("showScoreBreakdown").checked =
+            this.settings.showScoreBreakdown;
     }
 
     saveSettings() {
@@ -721,6 +728,13 @@ class WordPlayHelper {
             .getElementById("showCombinedScore")
             .addEventListener("change", (e) => {
                 this.settings.showCombinedScore = e.target.checked;
+                this.saveSettings();
+            });
+
+        document
+            .getElementById("showScoreBreakdown")
+            .addEventListener("change", (e) => {
+                this.settings.showScoreBreakdown = e.target.checked;
                 this.saveSettings();
             });
 

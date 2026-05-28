@@ -837,6 +837,11 @@ main {
     background: rgba(6, 182, 212, 0.12);
 }
 
+.game-modifier-select[data-modifier-color="lightblue"] {
+    border-color: #60a5fa;
+    background: rgba(96, 165, 250, 0.14);
+}
+
 .game-modifier-select[data-modifier-color="orange"] {
     border-color: var(--warning);
     background: rgba(245, 158, 11, 0.14);
@@ -1159,6 +1164,62 @@ main {
     display: inline;
 }
 
+.score-breakdown {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: 6px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.score-breakdown-item {
+    min-width: 0;
+    overflow: hidden;
+    padding: 2px 3px;
+    border-radius: 4px;
+    color: white;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.score-breakdown-tile {
+    background: #2563eb;
+}
+
+.score-breakdown-bonus {
+    background: var(--warning);
+}
+
+.score-breakdown-gold {
+    background: #d97706;
+}
+
+.score-breakdown-final {
+    background: #06b6d4;
+}
+
+.word:hover .score-breakdown-item {
+    background: white;
+}
+
+.word:hover .score-breakdown-tile {
+    color: #2563eb;
+}
+
+.word:hover .score-breakdown-bonus {
+    color: var(--warning);
+}
+
+.word:hover .score-breakdown-gold {
+    color: #d97706;
+}
+
+.word:hover .score-breakdown-final {
+    color: #0891b2;
+}
+
 /* Settings-based visibility */
 body.hide-tile-score .word-score-tile {
     display: none !important;
@@ -1169,6 +1230,10 @@ body.hide-position-score .word-score-position {
 }
 
 body.hide-combined-score .word-score-combined {
+    display: none !important;
+}
+
+body.hide-score-breakdown .score-breakdown {
     display: none !important;
 }
 

@@ -48,8 +48,11 @@ export function createWordHtml(wordObj) {
     const {
         word,
         tileScore,
+        bonusScore,
         positionScore,
         combinedScore,
+        goldMultiplier,
+        generalMultiplier,
         segments,
         isHighScore,
         isAchievementWord,
@@ -80,8 +83,34 @@ export function createWordHtml(wordObj) {
             ${createModifierBadges(interestModifiers)}
             <span class="word-score-position">${positionScore}</span>
             <span class="word-score-combined">${combinedScore}</span>
+            ${createScoreBreakdown({
+                bonusScore,
+                goldMultiplier,
+                generalMultiplier,
+                tileScore,
+            })}
         </div>
     `;
+}
+
+function createScoreBreakdown({
+    bonusScore,
+    goldMultiplier,
+    generalMultiplier,
+    tileScore,
+}) {
+    return `
+        <span class="score-breakdown" aria-label="Score breakdown">
+            <span class="score-breakdown-item score-breakdown-tile" title="Tile points">${formatScorePart(tileScore)}</span>
+            <span class="score-breakdown-item score-breakdown-bonus" title="Bonus points">+${formatScorePart(bonusScore)}</span>
+            <span class="score-breakdown-item score-breakdown-gold" title="Gold multiplier">x${formatScorePart(goldMultiplier)}</span>
+            <span class="score-breakdown-item score-breakdown-final" title="Final multiplier">x${formatScorePart(generalMultiplier)}</span>
+        </span>
+    `;
+}
+
+function formatScorePart(value) {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function createModifierBadges(interestModifiers) {

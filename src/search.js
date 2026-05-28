@@ -100,6 +100,7 @@ export function canTileMatchAt(word, startIndex, tile) {
                       type: "wildcard",
                       upgrade: tile.upgrade,
                       tileIndex: tile.index,
+                      score: tile.score,
                   },
               }
             : null;
@@ -113,6 +114,7 @@ export function canTileMatchAt(word, startIndex, tile) {
                 type: tile.isMultiLetter ? "multi" : "normal",
                 upgrade: tile.upgrade,
                 tileIndex: tile.index,
+                score: tile.score,
             },
         };
     }
@@ -179,21 +181,22 @@ export function createWordResult({
     const suffixText = suffixTiles.map((tile) => tile.text).join("");
     const word = `${baseWord}${suffixText}`;
     const segments = [...result.segments];
+    const submittedTileIndexes = new Set(
+        [...result.segments, ...suffixTiles]
+            .map((tileOrSegment) => tileOrSegment.tileIndex ?? tileOrSegment.index)
+            .filter((tileIndex) => tileIndex !== undefined)
+    );
+    const unsubmittedTileCount = allTiles.length - submittedTileIndexes.size;
     suffixTiles.forEach((tile) => {
         segments.push({
             text: tile.text,
             type: "suffix",
             upgrade: tile.upgrade,
             tileIndex: tile.index,
+            score: getTileScore(unsubmittedTileCount, tile.upgrade, tileUpgrades),
         });
     });
 
-    const submittedTileIndexes = new Set(
-        segments
-            .map((segment) => segment.tileIndex)
-            .filter((tileIndex) => tileIndex !== undefined)
-    );
-    const unsubmittedTileCount = allTiles.length - submittedTileIndexes.size;
     const suffixScore = suffixTiles.reduce(
         (total, tile) =>
             total + getTileScore(unsubmittedTileCount, tile.upgrade, tileUpgrades),

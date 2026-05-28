@@ -115,6 +115,29 @@ export const GAME_MODIFIERS = {
                 ? { generalMultiplier: 1.5, scoringLabel: "MOSS" }
                 : {},
     },
+    noun: {
+        label: "NOUN",
+        type: "scoring",
+        color: "cyan",
+        apply: ({ helpers, baseWord }) =>
+            helpers.hasAdjacentVowels(baseWord)
+                ? { generalMultiplier: 1.5, scoringLabel: "NOUN" }
+                : {},
+    },
+    each: {
+        label: "EACH",
+        type: "scoring",
+        color: "lightblue",
+        apply: ({ helpers, segments }) => {
+            const firstSegment = segments[0];
+            return helpers.isVowelTile(firstSegment)
+                ? {
+                      wordScoreBonus: firstSegment.score * 4,
+                      scoringLabel: "EACH",
+                  }
+                : {};
+        },
+    },
     done: {
         label: "DONE",
         type: "interest",

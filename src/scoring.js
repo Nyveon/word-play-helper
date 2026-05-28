@@ -62,7 +62,9 @@ export function calculateScoreBreakdown({
         activeGameModifiers,
         baseWord,
         gameModifiers,
+        segments,
     });
+    const modifiedWordScore = wordScore + modifierResult.wordScoreBonus;
     const bonusScore = positionScore + modifierResult.bonusScore;
     const goldMultiplier = getGoldMultiplier(segments, tileUpgrades);
     const upgradeGeneralMultiplier = getUpgradeGeneralMultiplier(
@@ -72,10 +74,10 @@ export function calculateScoreBreakdown({
     const generalMultiplier =
         upgradeGeneralMultiplier * modifierResult.generalMultiplier;
     const finalScore =
-        (goldMultiplier * wordScore + bonusScore) * generalMultiplier;
+        (goldMultiplier * modifiedWordScore + bonusScore) * generalMultiplier;
 
     return {
-        wordScore,
+        wordScore: modifiedWordScore,
         bonusScore,
         goldMultiplier,
         generalMultiplier,
@@ -101,7 +103,9 @@ export function evaluateGameModifiers({
     activeGameModifiers,
     baseWord,
     gameModifiers,
+    segments,
 }) {
+    let wordScoreBonus = 0;
     let bonusScore = 0;
     let generalMultiplier = 1;
     const scoringModifiers = [];
@@ -117,8 +121,12 @@ export function evaluateGameModifiers({
             const result = modifier.apply({
                 baseWord,
                 helpers,
+                segments,
             });
 
+            if (result.wordScoreBonus) {
+                wordScoreBonus += result.wordScoreBonus;
+            }
             if (result.bonusScore) {
                 bonusScore += result.bonusScore;
             }
@@ -134,6 +142,7 @@ export function evaluateGameModifiers({
         });
 
     return {
+        wordScoreBonus,
         bonusScore,
         generalMultiplier,
         scoringModifiers,
@@ -145,7 +154,9 @@ function getModifierHelpers() {
     return {
         countDistinctVowels,
         countLetters,
+        hasAdjacentVowels,
         hasLetterPair,
+        isVowelTile,
         getContainedNumberWord,
     };
 }
@@ -164,6 +175,15 @@ function countLetters(word, letter) {
     return [...word].filter((char) => char === letter).length;
 }
 
+function hasAdjacentVowels(word) {
+    for (let i = 1; i < word.length; i++) {
+        if (isVowel(word[i]) && isVowel(word[i - 1])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function hasLetterPair(word) {
     for (let i = 1; i < word.length; i++) {
         if (word[i] === word[i - 1]) {
@@ -171,6 +191,14 @@ function hasLetterPair(word) {
         }
     }
     return false;
+}
+
+function isVowelTile(segment) {
+    return Boolean(segment && segment.type !== "wildcard" && isVowel(segment.text[0]));
+}
+
+function isVowel(letter) {
+    return "AEIOU".includes(letter);
 }
 
 function getContainedNumberWord(word) {
