@@ -1,15 +1,21 @@
+const SCORE_VIEW_LIMIT = 1000;
+const LENGTH_GROUP_LIMIT = 200;
+
 export function renderScoreSortedResults(words) {
     const sortedWords = [...words].sort((a, b) => {
         const scoreDiff = b.combinedScore - a.combinedScore;
         if (scoreDiff !== 0) return scoreDiff;
-        const lengthDiff = b.word.length - a.word.length;
+        const lengthDiff = b.tileLength - a.tileLength;
         if (lengthDiff !== 0) return lengthDiff;
         return a.word.localeCompare(b.word);
     });
+    const visibleWords = sortedWords.slice(0, SCORE_VIEW_LIMIT);
+    const hiddenCount = sortedWords.length - visibleWords.length;
 
     return `
+        ${createRenderLimitNotice(hiddenCount)}
         <div class="words words-by-score">
-            ${sortedWords
+            ${visibleWords
                 .map((wordObj) =>
                     createWordHtml(wordObj, { showHighScore: false })
                 )
@@ -20,7 +26,7 @@ export function renderScoreSortedResults(words) {
 
 export function renderLengthGroupedResults(words) {
     const wordsByLength = words.reduce((acc, wordObj) => {
-        const length = wordObj.word.length;
+        const length = wordObj.tileLength;
         if (!acc[length]) acc[length] = [];
         acc[length].push(wordObj);
         return acc;
@@ -33,6 +39,8 @@ export function renderLengthGroupedResults(words) {
     return lengths
         .map((length) => {
             const wordsForLength = wordsByLength[length];
+            const visibleWords = wordsForLength.slice(0, LENGTH_GROUP_LIMIT);
+            const hiddenCount = wordsForLength.length - visibleWords.length;
             return `
                 <div class="word-group">
                     <h3 class="word-group-header" data-length="${length}" role="button" tabindex="0" aria-expanded="true" aria-controls="words-${length}">
@@ -41,7 +49,7 @@ export function renderLengthGroupedResults(words) {
                         <span class="word-count">${wordsForLength.length}</span>
                     </h3>
                     <div class="words" data-words-for="${length}" id="words-${length}">
-                        ${wordsForLength
+                        ${visibleWords
                             .map((wordObj) =>
                                 createWordHtml(wordObj, {
                                     showHighScore: true,
@@ -49,9 +57,18 @@ export function renderLengthGroupedResults(words) {
                             )
                             .join("")}
                     </div>
+                    ${createRenderLimitNotice(hiddenCount)}
                 </div>`;
         })
         .join("");
+}
+
+function createRenderLimitNotice(hiddenCount) {
+    if (hiddenCount <= 0) {
+        return "";
+    }
+
+    return `<p class="render-limit-note">${hiddenCount.toLocaleString()} more results hidden to keep the page responsive.</p>`;
 }
 
 export function createWordHtml(wordObj, { showHighScore } = {}) {
@@ -148,6 +165,9 @@ function createWordDisplay(word, segments) {
             }
             if (segment.type === "suffix") {
                 return `<span class="suffix-letter">${segment.text}</span>`;
+            }
+            if (segment.type === "plus") {
+                return `<span class="plus-tile">${segment.text}</span>`;
             }
             return segment.text;
         })

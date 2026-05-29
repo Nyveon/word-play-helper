@@ -945,6 +945,17 @@ main {
     animation: spin 1s linear infinite;
 }
 
+.loading p {
+    margin: 0;
+}
+
+.loading-progress {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);
@@ -1072,6 +1083,14 @@ main {
 
 .words-by-score {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.render-limit-note {
+    margin: 8px 0 12px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
 }
 
 .word {
@@ -1247,6 +1266,12 @@ body.hide-score-breakdown .score-breakdown {
     display: inline-block;
     padding: 0 3px;
     color: var(--warning);
+    font-weight: 800;
+}
+
+.plus-tile {
+    display: inline-block;
+    padding: 0 2px;
     font-weight: 800;
 }
 

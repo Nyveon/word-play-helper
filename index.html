@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Word Play Helper</title>
-        <link rel="stylesheet" href="style.css?v=kick-modifier-1" />
+        <link rel="stylesheet" href="style.css?v=progress-mask-1" />
     </head>
     <body>
         <div class="container">
@@ -143,6 +143,9 @@
                                     <code>!</code> Suffix
                                 </span>
                                 <span class="special-info-item-compact">
+                                    <code>+</code> Combine
+                                </span>
+                                <span class="special-info-item-compact">
                                     <code>Shift+I</code> ING
                                 </span>
                                 <span class="special-info-item-compact">
@@ -213,7 +216,13 @@
                         </div>
                         <div class="loading" id="loading" style="display: none">
                             <div class="spinner"></div>
-                            <p>Finding words...</p>
+                            <div>
+                                <p>Finding words...</p>
+                                <p
+                                    class="loading-progress"
+                                    id="loadingProgress"
+                                ></p>
+                            </div>
                         </div>
                         <div
                             class="filters-section"
@@ -291,6 +300,6 @@
             </footer>
         </div>
 
-        <script type="module" src="script.js?v=kick-modifier-1"></script>
+        <script type="module" src="script.js?v=scan-fast-1"></script>
     </body>
 </html>

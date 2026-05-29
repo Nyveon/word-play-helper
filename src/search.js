@@ -4,22 +4,37 @@ import {
     getTileScore,
 } from "./scoring.js";
 
-export function findWordResults({
+const PLUS_PAIR_CHUNK_SIZE = 5000;
+const PLUS_LENGTH_KEEP_LIMIT = 200;
+const PLUS_SCORE_KEEP_LIMIT = 1000;
+
+export async function findWordResults({
     achievementWords,
     activeGameModifiers,
     gameModifiers,
+    onProgress = () => {},
     tiles,
     tileUpgrades,
     wordList,
 }) {
+    const baseCandidates = [];
     const foundWords = [];
     const suffixTiles = getSuffixTiles(tiles);
+    const plusTile = tiles.find((tile) => tile.isPlus);
 
-    wordList.forEach((word) => {
-        if (word.length < 4) return;
+    onProgress({ phase: "Scanning words" });
+
+    for (let index = 0; index < wordList.length; index++) {
+        const word = wordList[index];
+        if (word.length < 4) continue;
 
         const result = canFormWord(word, tiles);
         if (result) {
+            baseCandidates.push({
+                baseWord: word,
+                result,
+                isAchievementWord: achievementWords.has(word),
+            });
             foundWords.push(
                 createWordResult({
                     activeGameModifiers,
@@ -33,6 +48,10 @@ export function findWordResults({
                 })
             );
         }
+
+    }
+    onProgress({
+        phase: "Scanning words",
     });
 
     achievementWords.forEach((word) => {
@@ -42,6 +61,11 @@ export function findWordResults({
 
         const result = canFormWord(word, tiles);
         if (result) {
+            baseCandidates.push({
+                baseWord: word,
+                result,
+                isAchievementWord: true,
+            });
             foundWords.push(
                 createWordResult({
                     activeGameModifiers,
@@ -57,6 +81,30 @@ export function findWordResults({
         }
     });
 
+    if (plusTile) {
+        const plusResults = await createPlusWordResults({
+            activeGameModifiers,
+            allTiles: tiles,
+            baseCandidates,
+            gameModifiers,
+            onProgress,
+            plusTile,
+            suffixTiles,
+            tileUpgrades,
+        });
+        for (const result of plusResults) {
+            foundWords.push(result);
+        }
+    }
+
+    onProgress({
+        phase: "Sorting results",
+        current: foundWords.length,
+        total: foundWords.length,
+        found: foundWords.length,
+    });
+    await yieldToBrowser();
+
     return markHighScores(sortWordResults(foundWords));
 }
 
@@ -65,7 +113,7 @@ export function passesLetterCountFilter(word, availableTiles) {
     let wildcardCount = 0;
 
     for (const tile of availableTiles) {
-        if (tile.isSuffix) {
+        if (tile.isSuffix || tile.isPlus) {
             continue;
         } else if (tile.isWildcard) {
             wildcardCount++;
@@ -91,6 +139,10 @@ export function passesLetterCountFilter(word, availableTiles) {
 }
 
 export function canTileMatchAt(word, startIndex, tile) {
+    if (tile.isPlus) {
+        return null;
+    }
+
     if (tile.isWildcard) {
         return startIndex < word.length
             ? {
@@ -127,17 +179,23 @@ export function canFormWord(word, availableTiles) {
         return false;
     }
 
-    const tiles = availableTiles.filter((tile) => !tile.isSuffix).sort((a, b) => {
-        if (a.isWildcard !== b.isWildcard) {
-            return a.isWildcard ? 1 : -1;
-        }
-        return b.text.length - a.text.length;
-    });
+    const tiles = availableTiles
+        .filter((tile) => !tile.isSuffix && !tile.isPlus)
+        .sort((a, b) => {
+            if (a.isWildcard !== b.isWildcard) {
+                return a.isWildcard ? 1 : -1;
+            }
+            return b.text.length - a.text.length;
+        });
     const usedTiles = new Array(tiles.length).fill(false);
 
     const search = (wordIndex, score, segments) => {
         if (wordIndex === word.length) {
-            return { score, segments };
+            return {
+                score,
+                segments,
+                usedMask: getUsedMask(segments),
+            };
         }
 
         for (let i = 0; i < tiles.length; i++) {
@@ -179,10 +237,179 @@ export function createWordResult({
     tileUpgrades,
 }) {
     const suffixText = suffixTiles.map((tile) => tile.text).join("");
-    const word = `${baseWord}${suffixText}`;
-    const segments = [...result.segments];
+    return createResultFromSegments({
+        activeGameModifiers,
+        allTiles,
+        baseWord,
+        displayWord: `${baseWord}${suffixText}`,
+        gameModifiers,
+        isAchievementWord,
+        segments: [...result.segments],
+        suffixTiles,
+        tileUpgrades,
+    });
+}
+
+async function createPlusWordResults({
+    activeGameModifiers,
+    allTiles,
+    baseCandidates,
+    gameModifiers,
+    onProgress,
+    plusTile,
+    suffixTiles,
+    tileUpgrades,
+}) {
+    const topByLength = new Map();
+    const topByScore = [];
+    const seenDisplays = new Set();
+    const totalPairs = (baseCandidates.length * (baseCandidates.length - 1)) / 2;
+    let checkedPairs = 0;
+    let generatedResults = 0;
+
+    onProgress({
+        phase: "Combining plus words",
+        current: 0,
+        total: totalPairs,
+        found: generatedResults,
+    });
+
+    for (let i = 0; i < baseCandidates.length; i++) {
+        for (let j = i + 1; j < baseCandidates.length; j++) {
+            checkedPairs++;
+            const orderedCandidates = orderPlusCandidates(
+                baseCandidates[i],
+                baseCandidates[j]
+            );
+            const [first, second] = orderedCandidates;
+            if (!areTileSetsCompatible(first.result, second.result)) {
+                continue;
+            }
+
+            const suffixText = suffixTiles.map((tile) => tile.text).join("");
+            const displayWord = `${first.baseWord}+${second.baseWord}${suffixText}`;
+            if (seenDisplays.has(displayWord)) {
+                continue;
+            }
+            seenDisplays.add(displayWord);
+
+            generatedResults++;
+            const plusResult = createResultFromSegments({
+                activeGameModifiers,
+                allTiles,
+                baseWord: `${first.baseWord}${second.baseWord}`,
+                displayWord,
+                gameModifiers,
+                isAchievementWord: false,
+                segments: [
+                    ...first.result.segments,
+                    createPlusSegment(plusTile),
+                    ...second.result.segments,
+                ],
+                suffixTiles,
+                tileUpgrades,
+            });
+            keepTopPlusResult({
+                result: plusResult,
+                topByLength,
+                topByScore,
+            });
+
+            if (checkedPairs % PLUS_PAIR_CHUNK_SIZE === 0) {
+                onProgress({
+                    phase: "Combining plus words",
+                    current: checkedPairs,
+                    total: totalPairs,
+                    found: generatedResults,
+                });
+                await yieldToBrowser();
+            }
+        }
+    }
+
+    const plusResults = mergeKeptPlusResults(topByLength, topByScore);
+    onProgress({
+        phase: "Combining plus words",
+        current: totalPairs,
+        total: totalPairs,
+        found: plusResults.length,
+    });
+
+    return plusResults;
+}
+
+function keepTopPlusResult({ result, topByLength, topByScore }) {
+    const lengthBucket = topByLength.get(result.tileLength) || [];
+    addBoundedResult(lengthBucket, result, PLUS_LENGTH_KEEP_LIMIT);
+    topByLength.set(result.tileLength, lengthBucket);
+
+    addBoundedResult(topByScore, result, PLUS_SCORE_KEEP_LIMIT);
+}
+
+function addBoundedResult(bucket, result, limit) {
+    if (bucket.length < limit) {
+        bucket.push(result);
+        bucket.sort(sortBestPlusResults);
+        return;
+    }
+
+    const worstKeptResult = bucket[bucket.length - 1];
+    if (sortBestPlusResults(result, worstKeptResult) < 0) {
+        bucket[bucket.length - 1] = result;
+        bucket.sort(sortBestPlusResults);
+    }
+}
+
+function mergeKeptPlusResults(topByLength, topByScore) {
+    const merged = new Map();
+    topByScore.forEach((result) => {
+        merged.set(result.word, result);
+    });
+    topByLength.forEach((bucket) => {
+        bucket.forEach((result) => {
+            merged.set(result.word, result);
+        });
+    });
+    return [...merged.values()];
+}
+
+function sortBestPlusResults(a, b) {
+    const scoreDiff = b.combinedScore - a.combinedScore;
+    if (scoreDiff !== 0) return scoreDiff;
+    const lengthDiff = b.tileLength - a.tileLength;
+    if (lengthDiff !== 0) return lengthDiff;
+    return a.word.localeCompare(b.word);
+}
+
+function orderPlusCandidates(first, second) {
+    const firstMinIndex = getMinimumTileIndex(first.result);
+    const secondMinIndex = getMinimumTileIndex(second.result);
+    if (firstMinIndex !== secondMinIndex) {
+        return firstMinIndex < secondMinIndex ? [first, second] : [second, first];
+    }
+
+    return first.baseWord.localeCompare(second.baseWord) <= 0
+        ? [first, second]
+        : [second, first];
+}
+
+function getMinimumTileIndex(result) {
+    return Math.min(...result.segments.map((segment) => segment.tileIndex));
+}
+
+function createResultFromSegments({
+    activeGameModifiers,
+    allTiles,
+    baseWord,
+    displayWord,
+    gameModifiers,
+    isAchievementWord,
+    segments,
+    suffixTiles,
+    tileUpgrades,
+}) {
     const submittedTileIndexes = new Set(
-        [...result.segments, ...suffixTiles]
+        [...segments, ...suffixTiles]
             .map((tileOrSegment) => tileOrSegment.tileIndex ?? tileOrSegment.index)
             .filter((tileIndex) => tileIndex !== undefined)
     );
@@ -197,12 +424,10 @@ export function createWordResult({
         });
     });
 
-    const suffixScore = suffixTiles.reduce(
-        (total, tile) =>
-            total + getTileScore(unsubmittedTileCount, tile.upgrade, tileUpgrades),
+    const wordScore = segments.reduce(
+        (total, segment) => total + (segment.score || 0),
         0
     );
-    const wordScore = result.score + suffixScore;
     const positionScore = getPositionScore(segments.length);
     const scoreBreakdown = calculateScoreBreakdown({
         activeGameModifiers,
@@ -215,7 +440,7 @@ export function createWordResult({
     });
 
     return {
-        word,
+        word: displayWord,
         baseWord,
         tileScore: scoreBreakdown.wordScore,
         wordScore: scoreBreakdown.wordScore,
@@ -228,12 +453,39 @@ export function createWordResult({
         interestModifiers: scoreBreakdown.interestModifiers,
         segments,
         isAchievementWord,
+        tileLength: segments.length,
+        usedMask: getUsedMask(segments),
     };
+}
+
+function createPlusSegment(tile) {
+    return {
+        text: tile.text,
+        type: "plus",
+        upgrade: tile.upgrade,
+        tileIndex: tile.index,
+        score: tile.score,
+    };
+}
+
+function areTileSetsCompatible(firstResult, secondResult) {
+    return (firstResult.usedMask & secondResult.usedMask) === 0;
+}
+
+function getUsedMask(segments) {
+    return segments.reduce(
+        (mask, segment) => mask | (1 << segment.tileIndex),
+        0
+    );
+}
+
+function yieldToBrowser() {
+    return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function sortWordResults(words) {
     return words.sort((a, b) => {
-        const lengthDiff = b.word.length - a.word.length;
+        const lengthDiff = b.tileLength - a.tileLength;
         if (lengthDiff !== 0) return lengthDiff;
         const scoreDiff = b.combinedScore - a.combinedScore;
         if (scoreDiff !== 0) return scoreDiff;
@@ -246,15 +498,15 @@ function markHighScores(words) {
         return words;
     }
 
-    const maxLength = words[0].word.length;
+    const maxLength = words[0].tileLength;
     const maxScoreAtMaxLength = Math.max(
         ...words
-            .filter((word) => word.word.length === maxLength)
+            .filter((word) => word.tileLength === maxLength)
             .map((word) => word.combinedScore)
     );
     words.forEach((word) => {
         if (
-            word.word.length < maxLength &&
+            word.tileLength < maxLength &&
             word.combinedScore > maxScoreAtMaxLength
         ) {
             word.isHighScore = true;

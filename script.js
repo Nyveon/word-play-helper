@@ -7,12 +7,12 @@ import {
     MULTI_LETTER_TILES,
     TILE_UPGRADES,
 } from "./src/config.js";
-import { findWordResults } from "./src/search.js";
+import { findWordResults } from "./src/search.js?v=scan-fast-1";
 import { getTileScore as calculateTileScore } from "./src/scoring.js";
 import {
     renderLengthGroupedResults,
     renderScoreSortedResults,
-} from "./src/rendering.js";
+} from "./src/rendering.js?v=render-cap-1";
 
 class WordPlayHelper {
     constructor() {
@@ -239,7 +239,7 @@ class WordPlayHelper {
             return;
         }
 
-        const value = input.value.replace(/[^A-Za-z*!]/g, "");
+        const value = input.value.replace(/[^A-Za-z*!+]/g, "");
         if (!value) {
             input.value = "";
             this.clearTileUpgrade(input);
@@ -909,6 +909,21 @@ class WordPlayHelper {
             };
         }
 
+        if (value === "+") {
+            return {
+                input: value,
+                text: value,
+                letters: [],
+                score: this.getTileScore(0, upgrade),
+                index,
+                upgrade,
+                isWildcard: false,
+                isMultiLetter: false,
+                isSuffix: false,
+                isPlus: true,
+            };
+        }
+
         const specialTileInput =
             input.dataset.tileInput ||
             Object.entries(this.multiLetterTiles).find(
@@ -932,6 +947,7 @@ class WordPlayHelper {
                 isWildcard: false,
                 isMultiLetter: true,
                 isSuffix: false,
+                isPlus: false,
             };
         }
 
@@ -946,6 +962,7 @@ class WordPlayHelper {
                 isWildcard: true,
                 isMultiLetter: false,
                 isSuffix: false,
+                isPlus: false,
             };
         }
 
@@ -959,6 +976,7 @@ class WordPlayHelper {
             isWildcard: false,
             isMultiLetter: false,
             isSuffix: false,
+            isPlus: false,
         };
     }
 
@@ -1038,6 +1056,12 @@ class WordPlayHelper {
         const findBtn = document.getElementById("findWords");
 
         loading.style.display = "flex";
+        this.updateLoadingProgress({
+            phase: "Starting search",
+            current: 0,
+            total: this.wordList.length,
+            found: 0,
+        });
         findBtn.disabled = true;
         this.isLoading = true;
     }
@@ -1049,6 +1073,22 @@ class WordPlayHelper {
         loading.style.display = "none";
         findBtn.disabled = false;
         this.isLoading = false;
+    }
+
+    updateLoadingProgress({ phase, current, total, found }) {
+        const progress = document.getElementById("loadingProgress");
+        if (!progress) return;
+
+        if (current === undefined || total === undefined) {
+            progress.textContent = phase;
+            return;
+        }
+
+        const totalText = total ? total.toLocaleString() : "0";
+        const currentText = Math.min(current ?? 0, total ?? 0).toLocaleString();
+        const foundText =
+            found !== undefined ? ` • ${found.toLocaleString()} found` : "";
+        progress.textContent = `${phase}: ${currentText}/${totalText}${foundText}`;
     }
 
     showError(message) {
@@ -1223,12 +1263,14 @@ class WordPlayHelper {
 
         this.showLoading();
 
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
-                const foundWords = findWordResults({
+                const foundWords = await findWordResults({
                     achievementWords: this.achievementWords,
                     activeGameModifiers: this.activeGameModifiers,
                     gameModifiers: this.gameModifiers,
+                    onProgress: (progress) =>
+                        this.updateLoadingProgress(progress),
                     tiles,
                     tileUpgrades: this.tileUpgrades,
                     wordList: this.wordList,
