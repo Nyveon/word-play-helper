@@ -6,13 +6,13 @@ import {
     MULTI_LETTER_TILE_SCORES,
     MULTI_LETTER_TILES,
     TILE_UPGRADES,
-} from "./src/config.js";
-import { findWordResults } from "./src/search.js?v=scan-fast-1";
+} from "./src/config.js?v=eyez-spelling-1";
+import { findWordResults } from "./src/search.js?v=eyez-spelling-1";
 import { getTileScore as calculateTileScore } from "./src/scoring.js";
 import {
     renderLengthGroupedResults,
     renderScoreSortedResults,
-} from "./src/rendering.js?v=render-cap-1";
+} from "./src/rendering.js?v=eyez-substitution-1";
 
 class WordPlayHelper {
     constructor() {

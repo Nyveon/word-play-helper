@@ -176,6 +176,12 @@ export const GAME_MODIFIERS = {
                 : {};
         },
     },
+    eyez: {
+        label: "EYEZ",
+        type: "spelling",
+        color: "white",
+        apply: () => ({}),
+    },
     done: {
         label: "DONE",
         type: "interest",

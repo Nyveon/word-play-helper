@@ -157,19 +157,50 @@ function createWordDisplay(word, segments) {
 
     return segments
         .map((segment) => {
+            const segmentText = createSegmentText(segment);
             if (segment.type === "wildcard") {
-                return `<span class="wildcard-letter">${segment.text}</span>`;
+                return `<span class="wildcard-letter">${segmentText}</span>`;
             }
             if (segment.type === "multi") {
-                return `<span class="multi-letter-tile">${segment.text}</span>`;
+                return `<span class="multi-letter-tile">${segmentText}</span>`;
             }
             if (segment.type === "suffix") {
-                return `<span class="suffix-letter">${segment.text}</span>`;
+                return `<span class="suffix-letter">${segmentText}</span>`;
             }
             if (segment.type === "plus") {
-                return `<span class="plus-tile">${segment.text}</span>`;
+                return `<span class="plus-tile">${segmentText}</span>`;
             }
-            return segment.text;
+            return segmentText;
         })
         .join("");
+}
+
+function createSegmentText(segment) {
+    if (!segment.spellingSubstitutions?.length) {
+        return escapeHtml(segment.text);
+    }
+
+    const substitutionIndexes = new Set(segment.spellingSubstitutions);
+    return [...segment.text]
+        .map((letter, index) => {
+            const escapedLetter = escapeHtml(letter);
+            return substitutionIndexes.has(index)
+                ? `<span class="spelling-substitution-letter">${escapedLetter}</span>`
+                : escapedLetter;
+        })
+        .join("");
+}
+
+function escapeHtml(value) {
+    return String(value).replace(
+        /[&<>"']/g,
+        (character) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+            }[character])
+    );
 }

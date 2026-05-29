@@ -21,6 +21,7 @@ export async function findWordResults({
     const foundWords = [];
     const suffixTiles = getSuffixTiles(tiles);
     const plusTile = tiles.find((tile) => tile.isPlus);
+    const spellingOptions = getSpellingOptions(activeGameModifiers);
 
     onProgress({ phase: "Scanning words" });
 
@@ -28,7 +29,7 @@ export async function findWordResults({
         const word = wordList[index];
         if (word.length < 4) continue;
 
-        const result = canFormWord(word, tiles);
+        const result = canFormWord(word, tiles, spellingOptions);
         if (result) {
             baseCandidates.push({
                 baseWord: word,
@@ -59,7 +60,7 @@ export async function findWordResults({
             return;
         }
 
-        const result = canFormWord(word, tiles);
+        const result = canFormWord(word, tiles, spellingOptions);
         if (result) {
             baseCandidates.push({
                 baseWord: word,
@@ -108,7 +109,7 @@ export async function findWordResults({
     return markHighScores(sortWordResults(foundWords));
 }
 
-export function passesLetterCountFilter(word, availableTiles) {
+export function passesLetterCountFilter(word, availableTiles, spellingOptions = {}) {
     const letterCount = {};
     let wildcardCount = 0;
 
@@ -128,6 +129,12 @@ export function passesLetterCountFilter(word, availableTiles) {
         const letter = word[i];
         if (letterCount[letter] > 0) {
             letterCount[letter]--;
+        } else if (
+            spellingOptions.interchangeSAndZ &&
+            isSOrZ(letter) &&
+            letterCount[getAlternateSOrZ(letter)] > 0
+        ) {
+            letterCount[getAlternateSOrZ(letter)]--;
         } else if (wildcardCount > 0) {
             wildcardCount--;
         } else {
@@ -138,7 +145,7 @@ export function passesLetterCountFilter(word, availableTiles) {
     return true;
 }
 
-export function canTileMatchAt(word, startIndex, tile) {
+export function canTileMatchAt(word, startIndex, tile, spellingOptions = {}) {
     if (tile.isPlus) {
         return null;
     }
@@ -158,11 +165,14 @@ export function canTileMatchAt(word, startIndex, tile) {
             : null;
     }
 
-    if (word.startsWith(tile.text, startIndex)) {
+    const matchedText = getTileTextMatch(word, startIndex, tile.text, spellingOptions);
+    if (matchedText) {
+        const endIndex = startIndex + tile.text.length;
         return {
-            endIndex: startIndex + tile.text.length,
+            endIndex,
             segment: {
-                text: tile.text,
+                text: matchedText.text,
+                spellingSubstitutions: matchedText.spellingSubstitutions,
                 type: tile.isMultiLetter ? "multi" : "normal",
                 upgrade: tile.upgrade,
                 tileIndex: tile.index,
@@ -174,8 +184,8 @@ export function canTileMatchAt(word, startIndex, tile) {
     return null;
 }
 
-export function canFormWord(word, availableTiles) {
-    if (!passesLetterCountFilter(word, availableTiles)) {
+export function canFormWord(word, availableTiles, spellingOptions = {}) {
+    if (!passesLetterCountFilter(word, availableTiles, spellingOptions)) {
         return false;
     }
 
@@ -201,7 +211,12 @@ export function canFormWord(word, availableTiles) {
         for (let i = 0; i < tiles.length; i++) {
             if (usedTiles[i]) continue;
 
-            const match = canTileMatchAt(word, wordIndex, tiles[i]);
+            const match = canTileMatchAt(
+                word,
+                wordIndex,
+                tiles[i],
+                spellingOptions
+            );
             if (!match) continue;
 
             usedTiles[i] = true;
@@ -379,6 +394,49 @@ function sortBestPlusResults(a, b) {
     const lengthDiff = b.tileLength - a.tileLength;
     if (lengthDiff !== 0) return lengthDiff;
     return a.word.localeCompare(b.word);
+}
+
+function getSpellingOptions(activeGameModifiers) {
+    return {
+        interchangeSAndZ: activeGameModifiers.includes("eyez"),
+    };
+}
+
+function getTileTextMatch(word, startIndex, tileText, spellingOptions) {
+    if (startIndex + tileText.length > word.length) {
+        return null;
+    }
+
+    const spellingSubstitutions = [];
+    for (let i = 0; i < tileText.length; i++) {
+        const wordLetter = word[startIndex + i];
+        const tileLetter = tileText[i];
+        if (wordLetter === tileLetter) {
+            continue;
+        }
+        if (
+            spellingOptions.interchangeSAndZ &&
+            isSOrZ(wordLetter) &&
+            getAlternateSOrZ(wordLetter) === tileLetter
+        ) {
+            spellingSubstitutions.push(i);
+            continue;
+        }
+        return null;
+    }
+
+    return {
+        text: word.slice(startIndex, startIndex + tileText.length),
+        spellingSubstitutions,
+    };
+}
+
+function isSOrZ(letter) {
+    return letter === "S" || letter === "Z";
+}
+
+function getAlternateSOrZ(letter) {
+    return letter === "S" ? "Z" : "S";
 }
 
 function orderPlusCandidates(first, second) {
